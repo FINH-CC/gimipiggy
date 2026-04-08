@@ -10,7 +10,10 @@
 // GitHub raw content URL
 const char* url = "https://raw.githubusercontent.com/dostr/dostr.github.io/master/gimipiggyhome.html";
 
-void fetchHTML() {
+uint32_t html_refetch_counter;
+#define HTML_REFETCH_COUNT 2000
+
+void html_fetch_html() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     
@@ -58,3 +61,17 @@ void fetchHTML() {
   }
 }
 
+void html_fetch_setup() {
+
+  html_refetch_counter = HTML_REFETCH_COUNT; // Ensure fetch happens on first pass.
+}
+
+void html_fetch_update() {
+
+  if(html_refetch_counter == HTML_REFETCH_COUNT) {
+      // Fetch the HTML content
+      html_fetch_html();
+      html_refetch_counter = 0;
+  }
+  html_refetch_counter++;
+}

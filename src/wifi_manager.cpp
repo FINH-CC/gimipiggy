@@ -30,174 +30,173 @@ const char* apSSID = "gimipiggy";
 const char* apPassword = "gimipiggy";
 const byte DNS_PORT = 53;
 
-uint32_t html_refetch_counter;
-#define HTML_REFETCH_COUNT 2000
+bool wifi_is_connected;
 
 void handleRoot() {
-    server.send(200, "text/html", htmlPage);
+
+  server.send(200, "text/html", htmlPage);
 }
 
 void handleScan() {
-    Serial.println("Scanning for networks...");
-    int n = WiFi.scanNetworks();
+
+  Serial.println("Scanning for networks...");
+  int n = WiFi.scanNetworks();
     
-    String json = "{\"networks\":[";
-    for (int i = 0; i < n; i++) {
-        if (i > 0) json += ",";
-        json += "{";
-        json += "\"ssid\":\"" + WiFi.SSID(i) + "\",";
-        json += "\"rssi\":" + String(WiFi.RSSI(i)) + ",";
-        json += "\"encryption\":" + String(WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? "true" : "false");
-        json += "}";
-    }
-    json += "]}";
+  String json = "{\"networks\":[";
+  for (int i = 0; i < n; i++) {
+    if (i > 0) json += ",";
+    json += "{";
+    json += "\"ssid\":\"" + WiFi.SSID(i) + "\",";
+    json += "\"rssi\":" + String(WiFi.RSSI(i)) + ",";
+    json += "\"encryption\":" + String(WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? "true" : "false");
+    json += "}";
+  }
+  json += "]}";
     
-    WiFi.scanDelete();
-    server.send(200, "application/json", json);
+  WiFi.scanDelete();
+  server.send(200, "application/json", json);
 }
 
 void handleSave() {
-    if (server.hasArg("ssid")) {
-        ssid = server.arg("ssid");
-        password = server.hasArg("password") ? server.arg("password") : "";
-        
-        Serial.println("\nReceived WiFi credentials:");
-        Serial.println("SSID: " + ssid);
-        Serial.println("Password: " + String(password.length() > 0 ? "********" : "(none)"));
-        
-        // Save to preferences
-        preferences.putString("ssid", ssid);
-        preferences.putString("password", password);
-        
-        server.send(200, "text/html", successPage);
-        
-        delay(2000);
-        Serial.println("Restarting ESP32...");
-        ESP.restart();
-    } else {
-        server.send(400, "text/plain", "Missing SSID parameter");
-    }
+
+  if (server.hasArg("ssid")) {
+    ssid = server.arg("ssid");
+    password = server.hasArg("password") ? server.arg("password") : "";
+
+    Serial.println("\nReceived WiFi credentials:");
+    Serial.println("SSID: " + ssid);
+    Serial.println("Password: " + String(password.length() > 0 ? "********" : "(none)"));
+
+    // Save to preferences
+    preferences.putString("ssid", ssid);
+    preferences.putString("password", password);
+
+    server.send(200, "text/html", successPage);
+
+    delay(2000);
+    Serial.println("Restarting ESP32...");
+    ESP.restart();
+  } else {
+    server.send(400, "text/plain", "Missing SSID parameter");
+  }
 }
 
 void startConfigMode() {
-    configMode = true;
-    Serial.println("\nStarting Configuration Mode");
-    Serial.println("===========================");
     
-    // Start Access Point
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP(apSSID, apPassword);
-    
-    Serial.print("AP SSID: ");
-    Serial.println(apSSID);
-    Serial.print("AP Password: ");
-    Serial.println(apPassword);
-    Serial.print("AP IP Address: ");
-    Serial.println(WiFi.softAPIP());
-    
-    // Start DNS server for captive portal
-    dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
-    
-    // Setup web server routes
-    server.on("/", HTTP_GET, handleRoot);
-    server.on("/scan", HTTP_GET, handleScan);
-    server.on("/save", HTTP_POST, handleSave);
-    server.onNotFound(handleRoot); // Redirect all requests to root for captive portal
-    
-    server.begin();
-    Serial.println("HTTP server started");
-    Serial.println("Connect to the AP and navigate to http://192.168.4.1");
-    
-    // Blink LED to indicate config mode
-    for (int i = 0; i < 6; i++) {
-        digitalWrite(LED_PIN, LOW);
-        delay(100);
-        digitalWrite(LED_PIN, HIGH);
-        delay(100);
-    }
+  configMode = true;
+  Serial.println("\nStarting Configuration Mode");
+  Serial.println("===========================");
+
+  // Start Access Point
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(apSSID, apPassword);
+
+  Serial.print("AP SSID: ");
+  Serial.println(apSSID);
+  Serial.print("AP Password: ");
+  Serial.println(apPassword);
+  Serial.print("AP IP Address: ");
+  Serial.println(WiFi.softAPIP());
+
+  // Start DNS server for captive portal
+  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+
+  // Setup web server routes
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/scan", HTTP_GET, handleScan);
+  server.on("/save", HTTP_POST, handleSave);
+  server.onNotFound(handleRoot); // Redirect all requests to root for captive portal
+
+  server.begin();
+  Serial.println("HTTP server started");
+  Serial.println("Connect to the AP and navigate to http://192.168.4.1");
+
+  // Blink LED to indicate config mode
+  for (int i = 0; i < 6; i++) {
+    digitalWrite(LED_PIN, LOW);
+    delay(100);
+    digitalWrite(LED_PIN, HIGH);
+    delay(100);
+  }
 }
 
 void wifi_manager_setup() {
 
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, HIGH); // LED OFF (active-low)
+  wifi_is_connected = false;
 
-    html_refetch_counter = HTML_REFETCH_COUNT; // Ensure fetch happens on first pass.
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH); // LED OFF (active-low)
 
-    // Initialize preferences
-    preferences.begin("wifi-config", false);
-    ssid = preferences.getString("ssid", "");
-    password = preferences.getString("password", "");
-    
-    Serial.println("\n\nGimi Piggy WiFi Configuration Portal");
-    Serial.println("================================");
-    
-    // Try to connect to saved WiFi
-    if (ssid.length() > 0) {
-        Serial.println("Attempting to connect to saved WiFi: " + ssid);
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(ssid.c_str(), password.c_str());
-        
-        // Blink LED while connecting
-        int attempts = 0;
-        while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-            digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-            delay(500);
-            Serial.print(".");
-            attempts++;
-        }
-        Serial.println();
-        
-        if (WiFi.status() == WL_CONNECTED) {
-            digitalWrite(LED_PIN, LOW); // LED ON - connected
-            Serial.println("Connected to WiFi!");
-            Serial.print("IP Address: ");
-            Serial.println(WiFi.localIP());
-            return;
-        } else {
-            Serial.println("Failed to connect to saved WiFi");
-        }
+  // Initialize preferences
+  preferences.begin("wifi-config", false);
+  ssid = preferences.getString("ssid", "");
+  password = preferences.getString("password", "");
+
+  Serial.println("\n\nGimi Piggy WiFi Configuration Portal");
+  Serial.println("================================");
+
+  // Try to connect to saved WiFi
+  if (ssid.length() > 0) {
+    Serial.println("Attempting to connect to saved WiFi: " + ssid);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid.c_str(), password.c_str());
+
+  // Blink LED while connecting
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+    delay(500);
+    Serial.print(".");
+    attempts++;
     }
-    
-    // Start configuration mode
-    startConfigMode();
-}
+    Serial.println();
 
-void wifi_manager_loop() {
-  
-    if (configMode) {
-        dnsServer.processNextRequest();
-        server.handleClient();
-        
-        // Slow blink LED in config mode
-        static unsigned long lastBlink = 0;
-        if (millis() - lastBlink > 2000) {
-            digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-            lastBlink = millis();
-        }
+    if (WiFi.status() == WL_CONNECTED) {
+    digitalWrite(LED_PIN, LOW); // LED ON - connected
+    Serial.println("Connected to WiFi!");
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+    return;
     } else {
-        // Normal operation mode - LED steady on if connected
-        if (WiFi.status() == WL_CONNECTED) {
-            digitalWrite(LED_PIN, LOW); // LED ON
-
-            graphics_lvgl_update();
-
-            if(html_refetch_counter == HTML_REFETCH_COUNT) {
-                // Fetch the HTML content
-                fetchHTML();
-                html_refetch_counter = 0;
-            }
-            html_refetch_counter++;
-
-        } else {
-            // Lost connection, try to reconnect
-            digitalWrite(LED_PIN, HIGH); // LED OFF
-            Serial.println("WiFi disconnected, attempting to reconnect...");
-            WiFi.reconnect();
-            delay(5000);
-        }
+    Serial.println("Failed to connect to saved WiFi");
     }
-    
-    delay(10);
+  }
+
+  // Start configuration mode
+  startConfigMode();
 }
 
+void wifi_manager_update() {
+  
+  if (configMode) {
+    dnsServer.processNextRequest();
+    server.handleClient();
+
+    // Slow blink LED in config mode
+    static unsigned long lastBlink = 0;
+    if (millis() - lastBlink > 2000) {
+    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+    lastBlink = millis();
+    }
+  } else {
+    // Normal operation mode - LED steady on if connected
+    if (WiFi.status() == WL_CONNECTED) {
+    wifi_is_connected = true;
+    digitalWrite(LED_PIN, LOW); // LED ON
+    } else {
+    wifi_is_connected = false;
+    // Lost connection, try to reconnect
+    digitalWrite(LED_PIN, HIGH); // LED OFF
+    Serial.println("WiFi disconnected, attempting to reconnect...");
+    WiFi.reconnect();
+    delay(5000);
+    }
+  }
+    
+  delay(10);
+}
+
+bool wifi_manager_is_connected() {
+
+  return wifi_is_connected;
+}
