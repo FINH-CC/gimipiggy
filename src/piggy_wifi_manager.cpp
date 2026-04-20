@@ -7,10 +7,10 @@
 #include <DNSServer.h>
 #include <Preferences.h>
 
-#include "wifi_manager_html.h"
-#include "wifi_manager.h"
-#include "html_fetch.h"
-#include "graphics_lvgl.h"
+#include "piggy_wifi_manager_html.h"
+#include "piggy_wifi_manager.h"
+#include "piggy_html_fetch.h"
+#include "piggy_graphics_lvgl.h"
 
 // Built-in LED pin (active-low on most ESP32 boards)
 #define LED_PIN 2
@@ -120,7 +120,7 @@ void startConfigMode() {
   }
 }
 
-void wifi_manager_setup() {
+void piggy_wifi_manager_setup() {
 
   wifi_is_connected = false;
 
@@ -158,7 +158,7 @@ void wifi_manager_setup() {
     Serial.println(WiFi.localIP());
     return;
     } else {
-    Serial.println("Failed to connect to saved WiFi");
+      Serial.println("Failed to connect to saved WiFi");
     }
   }
 
@@ -166,7 +166,7 @@ void wifi_manager_setup() {
   startConfigMode();
 }
 
-void wifi_manager_update() {
+void piggy_wifi_manager_update() {
   
   if (configMode) {
     dnsServer.processNextRequest();
@@ -181,22 +181,22 @@ void wifi_manager_update() {
   } else {
     // Normal operation mode - LED steady on if connected
     if (WiFi.status() == WL_CONNECTED) {
-    wifi_is_connected = true;
-    digitalWrite(LED_PIN, LOW); // LED ON
+      wifi_is_connected = true;
+      digitalWrite(LED_PIN, LOW); // LED ON
     } else {
-    wifi_is_connected = false;
-    // Lost connection, try to reconnect
-    digitalWrite(LED_PIN, HIGH); // LED OFF
-    Serial.println("WiFi disconnected, attempting to reconnect...");
-    WiFi.reconnect();
-    delay(5000);
+      wifi_is_connected = false;
+      // Lost connection, try to reconnect
+      digitalWrite(LED_PIN, HIGH); // LED OFF
+      Serial.println("WiFi disconnected, attempting to reconnect...");
+      WiFi.reconnect();
+      delay(5000);
     }
   }
     
   delay(10);
 }
 
-bool wifi_manager_is_connected() {
+bool piggy_wifi_manager_is_connected() {
 
   return wifi_is_connected;
 }

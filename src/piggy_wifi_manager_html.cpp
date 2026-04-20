@@ -6,7 +6,7 @@
 #include <WebServer.h>
 #include <DNSServer.h>
 
-#include "wifi_manager_html.h"
+#include "piggy_wifi_manager_html.h"
 
 // HTML for configuration page
 const char htmlPage[] PROGMEM = R"rawliteral(

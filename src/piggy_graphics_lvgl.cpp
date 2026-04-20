@@ -6,7 +6,7 @@
 #include <lvgl.h>
 #include <XPT2046_Touchscreen.h>
 
-#include "graphics_lvgl.h"
+#include "piggy_graphics_lvgl.h"
 
 // Touchscreen pins
 #define XPT2046_IRQ 36   // T_IRQ
@@ -96,7 +96,56 @@ static void slider_event_callback(lv_event_t * e) {
   LV_LOG_USER("Slider changed to %d%%", (int)lv_slider_get_value(slider));
 }
 
-void lv_create_main_gui(void) {
+void piggy_lv_create_wifi_config_gui(void) {
+    // ----- Set Dark Blue Background -----
+    lv_obj_t *screen = lv_scr_act();
+
+    // Create a style for the screen background
+    static lv_style_t style_screen;
+    lv_style_init(&style_screen);
+    lv_style_set_bg_color(&style_screen, lv_color_hex(0x00008B)); // Dark blue
+    lv_style_set_bg_opa(&style_screen, LV_OPA_COVER);
+    lv_obj_add_style(screen, &style_screen, 0);
+
+    // Remove any default padding
+    lv_obj_set_style_pad_all(screen, 0, 0);
+
+
+  // Create a text label aligned center on top ("Hello, world!")
+  lv_obj_t * text_label = lv_label_create(lv_screen_active());
+  lv_label_set_long_mode(text_label, LV_LABEL_LONG_WRAP);    // Breaks the long lines
+  lv_label_set_text(text_label, "Gimi Piggy");
+  lv_obj_set_width(text_label, 150);    // Set smaller width to make the lines wrap
+  lv_obj_set_style_text_align(text_label, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_align(text_label, LV_ALIGN_CENTER, 0, -90);
+
+  /*static lv_style_t style;
+  lv_style_init(&style);
+  lv_style_set_radius(&style, 5);
+
+  //Make a gradient
+  lv_style_set_bg_opa(&style, LV_OPA_COVER);
+  static lv_grad_dsc_t grad;
+  grad.dir = LV_GRAD_DIR_VER;
+  grad.stops_count = 2;
+  grad.stops[0].color = lv_palette_lighten(LV_PALETTE_GREY, 1);
+  grad.stops[0].opa = LV_OPA_COVER;
+  grad.stops[1].color = lv_palette_main(LV_PALETTE_BLUE);
+  grad.stops[1].opa = LV_OPA_COVER;
+
+  //Shift the gradient to the bottom
+  grad.stops[0].frac  = 128;
+  grad.stops[1].frac  = 192;
+
+  lv_style_set_bg_grad(&style, &grad);
+
+  //Create an object with the new style
+  lv_obj_t * obj = lv_obj_create(lv_screen_active());
+  lv_obj_add_style(obj, &style, 0);
+  lv_obj_center(obj);*/
+}
+
+void piggy_lv_create_main_gui(void) {
   // Create a text label aligned center on top ("Hello, world!")
   lv_obj_t * text_label = lv_label_create(lv_screen_active());
   lv_label_set_long_mode(text_label, LV_LABEL_LONG_WRAP);    // Breaks the long lines
@@ -140,7 +189,7 @@ void lv_create_main_gui(void) {
   lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 }
 
-void graphics_lvgl_setup(void) {
+void piggy_graphics_lvgl_setup(void) {
 
   String LVGL_Arduino = String("LVGL Library Version: ") + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
   Serial.println(LVGL_Arduino);
@@ -170,7 +219,20 @@ void graphics_lvgl_setup(void) {
   lv_indev_set_read_cb(indev, touchscreen_read);
 
   // Function to draw the GUI (text, buttons and sliders)
-  lv_create_main_gui();
+  piggy_lv_create_wifi_config_gui();
+  lv_task_handler();  // let the GUI do its work
+
+  delay(2000);
+  pinMode(21, OUTPUT);
+  digitalWrite(21, LOW); // Screen OFF
+  delay(2000);
+  digitalWrite(21, HIGH); // Screen ON (active-high)
+  delay(2000);
+  digitalWrite(21, LOW); // Screen OFF
+  delay(2000);
+  digitalWrite(21, HIGH); // Screen ON (active-high)
+
+//  lv_create_main_gui();
 
   // Initialize display
 /*    tft.init();
@@ -196,7 +258,7 @@ void graphics_lvgl_setup(void) {
   tft.println("go to http://192.168.4.1");*/
 }
 
-void graphics_lvgl_update(void) {
+void piggy_graphics_lvgl_update(void) {
 
   lv_task_handler();  // let the GUI do its work
   lv_tick_inc(5);     // tell LVGL how much time has passed

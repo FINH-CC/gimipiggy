@@ -4,25 +4,28 @@
 
 #include <Arduino.h>
 
-#include "graphics_lvgl.h"
-#include "wifi_manager.h"
-#include "html_fetch.h"
+#include "piggy_graphics_lvgl.h"
+#include "piggy_wifi_manager.h"
+#include "piggy_html_fetch.h"
+#include "piggy_printer.h"
 
 void setup() {
 
   Serial.begin(115200);
 
-  graphics_lvgl_setup();
-  html_fetch_setup();
-  wifi_manager_setup();
+  piggy_graphics_lvgl_setup();
+  piggy_html_fetch_setup();
+  piggy_wifi_manager_setup();
+  piggy_printer_setup();
 }
 
 void loop() {
-  wifi_manager_update();
+  piggy_wifi_manager_update();
 
-  if (wifi_manager_is_connected() == true) {
+  if (piggy_wifi_manager_is_connected() == true) {
 
-    graphics_lvgl_update();
-    html_fetch_update();
+    piggy_graphics_lvgl_update();
+    piggy_html_fetch_update();
+    piggy_printer_update();
   }
 }
