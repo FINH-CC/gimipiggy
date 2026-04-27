@@ -3,19 +3,18 @@
 //
 
 #include <HardwareSerial.h>
+
 #include "piggy_printer.h"
+#include "piggy_experimental_printer.h"
+#include "piggy_gimi_logo.h"
 
 uint32_t printer_repeat_counter;
 #define PRINTER_REPEAT_COUNT 20000
 
-HardwareSerial mySerial(2);  // use UART2 (GPIO22 TX, GPIO27 RX)
-
 void piggy_printer_setup() {
-  Serial.begin(115200);
-  mySerial.begin(9600, SERIAL_8N1, 22, 27); // RX, TX
 
-  delay(2000);
-  
+  piggy_experimental_printer_setup();
+
   printer_repeat_counter = PRINTER_REPEAT_COUNT; // Ensure print happens on first pass.
 }
 
@@ -23,13 +22,17 @@ void piggy_printer_update() {
 
   if(printer_repeat_counter == PRINTER_REPEAT_COUNT) {
 
+//	setDarknessAndDelay(100, 1000);
+//	setDarknessAndDelay(50, 1750);
 
-    // Print a test message
-    mySerial.println("=== Thermal Printer Test ===");
-    mySerial.println("Hello from the ESP32!");
-    mySerial.println("This is a thermal printer demo.");
+    printBitmapGS_Method(epd_bitmap_gimi_small_logo, 77, 32);
+    printBitmapGS_Method(epd_bitmap_gimi_logo, 308, 128);
+    //printBitmapGS_Method(epd_bitmap_Celebration_Receipt, 384, 1175);
+    printBitmapGS_Method(epd_bitmap_W384_Type_Test, 384, 1047);
 
-      printer_repeat_counter = 0;
+//	demoPrintAllFormats();
+
+    printer_repeat_counter = 0;
   }
 
   printer_repeat_counter++;
