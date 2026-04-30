@@ -10,7 +10,6 @@
 #include "piggy_wifi_manager_html.h"
 #include "piggy_wifi_manager.h"
 #include "piggy_html_fetch.h"
-#include "piggy_graphics_lvgl.h"
 
 // Built-in LED pin (active-low on most ESP32 boards)
 #define LED_PIN 2
