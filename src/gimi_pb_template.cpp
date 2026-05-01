@@ -1,8 +1,8 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
-#include "piggy_template.h"
+#include "gimi_pb_template.h"
 
 void piggy_template_setup() {
 }

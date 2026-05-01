@@ -1,10 +1,10 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <pgmspace.h>
 
-#include "piggy_gimi_logo.h"
+#include "gimi_pb_base64.h"
 
 // 'Gimi Logo', 308x128px
 

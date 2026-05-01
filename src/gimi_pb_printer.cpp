@@ -1,13 +1,13 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include <esp_heap_caps.h>
 
-#include "piggy_printer.h"
-#include "piggy_gimi_logo.h"
+#include "gimi_pb_printer.h"
+#include "gimi_pb_base64.h"
 
 
 

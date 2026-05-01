@@ -1,5 +1,5 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <WiFi.h>
@@ -7,9 +7,9 @@
 #include <DNSServer.h>
 #include <Preferences.h>
 
-#include "piggy_wifi_manager_html.h"
-#include "piggy_wifi_manager.h"
-#include "piggy_html_fetch.h"
+#include "gimi_pb_wifi_html.h"
+#include "gimi_pb_wifi.h"
+#include "gimi_pb_html_fetch.h"
 
 // Built-in LED pin (active-low on most ESP32 boards)
 #define LED_PIN 2

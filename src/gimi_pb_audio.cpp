@@ -1,8 +1,8 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
-#include "piggy_audio.h"
+#include "gimi_pb_audio.h"
 
 void piggy_audio_setup() {
 }

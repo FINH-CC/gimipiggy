@@ -1,9 +1,9 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
-#ifndef __PIGGY_PRINTER_H
-#define __PIGGY_PRINTER_H
+#ifndef __GIMI_PB_PRINTER_H
+#define __GIMI_PB_PRINTER_H
 
 // ******************************************************************** //
 //                                                                      //
@@ -78,5 +78,5 @@ void demoPrintNextImage();
 // Shows all printer capabilities in one printout
 void demoPrintAllFormats();
 
-#endif // __PIGGY_PRINTER_H
+#endif // __GIMI_PB_PRINTER_H
 

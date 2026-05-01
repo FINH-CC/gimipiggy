@@ -1,9 +1,9 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
-#ifndef __PIGGY_GIMI_LOGO_H
-#define __PIGGY_GIMI_LOGO_H
+#ifndef __GIMI_PB_BASE64_H
+#define __GIMI_PB_BASE64_H
 
 extern const unsigned char epd_bitmap_gimi_logo[];
 extern const unsigned char epd_bitmap_gimi_small_logo[];
@@ -15,4 +15,4 @@ extern const unsigned char epd_bitmap_image_tests_5[];
 
 int get_gimi_logo_size(void);
 
-#endif // __PIGGY_GIMI_LOGO_H
+#endif // __GIMI_PB_BASE64_H

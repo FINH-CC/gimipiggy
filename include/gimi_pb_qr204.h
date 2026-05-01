@@ -1,5 +1,5 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #ifndef __GIMI_PB_QR204_H

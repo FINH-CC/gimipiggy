@@ -1,12 +1,12 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-#include "piggy_bin_fetch.h"
+#include "gimi_pb_bin_fetch.h"
 #include "gimi_pb_qr204.h"
 
 const char* URL = "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin";

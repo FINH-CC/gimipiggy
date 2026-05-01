@@ -1,11 +1,11 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-#include "piggy_html_fetch.h"
+#include "gimi_pb_html_fetch.h"
 
 // GitHub raw content URL
 const char* url = "https://raw.githubusercontent.com/dostr/dostr.github.io/master/gimipiggyhome.html";

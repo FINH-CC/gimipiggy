@@ -1,11 +1,11 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <WiFi.h>
 #include <esp_wps.h>
 
-#include "piggy_wps.h"
+#include "gimi_pb_wps.h"
 
 #define WPS_BUTTON_PIN 0 // Using onboard BOOT button on many ESP32 devkits
 #define ESP_WPS_MODE WPS_TYPE_PBC

@@ -1,10 +1,10 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <Arduino.h>
 
-#include "piggy_buttons.h"
+#include "gimi_pb_buttons.h"
 
 // set pin numbers
 const int buttonPin = 35;  // the number of the pushbutton pin

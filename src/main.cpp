@@ -4,11 +4,11 @@
 
 #include <Arduino.h>
 
-#include "piggy_wifi_manager.h"
-#include "piggy_bin_fetch.h"
-#include "piggy_html_fetch.h"
-#include "piggy_printer.h"
-#include "piggy_buttons.h"
+#include "gimi_pb_wifi.h"
+#include "gimi_pb_bin_fetch.h"
+#include "gimi_pb_html_fetch.h"
+#include "gimi_pb_printer.h"
+#include "gimi_pb_buttons.h"
 #include "gimi_pb_qr204.h"
 
 void setup() {

@@ -1,12 +1,12 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
 
-#include "piggy_wifi_manager_html.h"
+#include "gimi_pb_wifi_html.h"
 
 // HTML for configuration page
 const char htmlPage[] PROGMEM = R"rawliteral(
