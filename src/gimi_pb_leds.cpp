@@ -1,18 +1,19 @@
 //
-// Gimi Piggy, Copyright 2026.
+// Copyright 2026.
 //
 
 #include <Arduino.h>
 
 #include "gimi_pb_leds.h"
+#include "gimi_pb_pins.h"
 
 // set pin numbers
-const int redPin = 4;
-const int greenPin = 16;
-const int bluePin = 17;
-const int backlightPin = 21;
+const int redPin = GPIO_04;
+const int greenPin = GPIO_16;
+const int bluePin = GPIO_17;
+const int backlightPin = GPIO_21;
 
-void piggy_leds_setup() {
+void gimi_pb_leds_setup() {
 
   pinMode(redPin, OUTPUT);
   pinMode(greenPin, OUTPUT);
@@ -25,6 +26,6 @@ void piggy_leds_setup() {
 //  digitalWrite(backlightPin, HIGH);
 }
 
-void piggy_leds_update() {
+void gimi_pb_leds_update() {
 }
 

@@ -4,9 +4,9 @@
 
 #include "gimi_pb_tf.h"
 
-void piggy_tf_setup() {
+void gimi_pb_tf_setup() {
 }
 
-void piggy_tf_update() {
+void gimi_pb_tf_update() {
 }
 

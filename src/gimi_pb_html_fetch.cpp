@@ -13,7 +13,7 @@ const char* url = "https://raw.githubusercontent.com/dostr/dostr.github.io/maste
 uint32_t html_refetch_counter;
 #define HTML_REFETCH_COUNT 2000
 
-void piggy_html_fetch_html() {
+void gimi_pb_html_fetch_html() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     
@@ -61,16 +61,16 @@ void piggy_html_fetch_html() {
   }
 }
 
-void piggy_html_fetch_setup() {
+void gimi_pb_html_fetch_setup() {
 
   html_refetch_counter = HTML_REFETCH_COUNT; // Ensure fetch happens on first pass.
 }
 
-void piggy_html_fetch_update() {
+void gimi_pb_html_fetch_update() {
 
   if(html_refetch_counter == HTML_REFETCH_COUNT) {
       // Fetch the HTML content
-      piggy_html_fetch_html();
+      gimi_pb_html_fetch_html();
       html_refetch_counter = 0;
   }
   html_refetch_counter++;

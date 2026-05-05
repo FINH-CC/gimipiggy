@@ -11,9 +11,6 @@
 #include "gimi_pb_wifi.h"
 #include "gimi_pb_html_fetch.h"
 
-// Built-in LED pin (active-low on most ESP32 boards)
-#define LED_PIN 2
-
 // DNS server for captive portal
 DNSServer dnsServer;
 WebServer server(80);
@@ -25,8 +22,8 @@ String password = "";
 bool configMode = false;
 
 // AP configuration
-const char* apSSID = "gimipiggy";
-const char* apPassword = "gimipiggy";
+const char* apSSID = "gimi";
+const char* apPassword = "gimi";
 const byte DNS_PORT = 53;
 
 bool wifi_is_connected;
@@ -80,6 +77,19 @@ void handleSave() {
   }
 }
 
+void gimi_pb_wifi_manager_restart_wifi_setup() {
+
+    Serial.println("Clearing WiFi credentials\n");
+
+    // Save to preferences
+    preferences.putString("ssid", "");
+    preferences.putString("password", "");
+
+    delay(2000);
+    Serial.println("Restarting ESP32...");
+    ESP.restart();
+}
+
 void startConfigMode() {
     
   configMode = true;
@@ -110,28 +120,18 @@ void startConfigMode() {
   Serial.println("HTTP server started");
   Serial.println("Connect to the AP and navigate to http://192.168.4.1");
 
-  // Blink LED to indicate config mode
-  for (int i = 0; i < 6; i++) {
-    digitalWrite(LED_PIN, LOW);
-    delay(100);
-    digitalWrite(LED_PIN, HIGH);
-    delay(100);
-  }
 }
 
-void piggy_wifi_manager_setup() {
+void gimi_pb_wifi_manager_setup() {
 
   wifi_is_connected = false;
-
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, HIGH); // LED OFF (active-low)
 
   // Initialize preferences
   preferences.begin("wifi-config", false);
   ssid = preferences.getString("ssid", "");
   password = preferences.getString("password", "");
 
-  Serial.println("\n\nGimi Piggy WiFi Configuration Portal");
+  Serial.println("\n\nGimi PB WiFi Configuration Portal");
   Serial.println("================================");
 
   // Try to connect to saved WiFi
@@ -140,10 +140,8 @@ void piggy_wifi_manager_setup() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid.c_str(), password.c_str());
 
-  // Blink LED while connecting
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
     delay(500);
     Serial.print(".");
     attempts++;
@@ -151,7 +149,6 @@ void piggy_wifi_manager_setup() {
     Serial.println();
 
     if (WiFi.status() == WL_CONNECTED) {
-    digitalWrite(LED_PIN, LOW); // LED ON - connected
     Serial.println("Connected to WiFi!");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
@@ -165,27 +162,19 @@ void piggy_wifi_manager_setup() {
   startConfigMode();
 }
 
-void piggy_wifi_manager_update() {
+void gimi_pb_wifi_manager_update() {
   
   if (configMode) {
     dnsServer.processNextRequest();
     server.handleClient();
 
-    // Slow blink LED in config mode
-    static unsigned long lastBlink = 0;
-    if (millis() - lastBlink > 2000) {
-    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-    lastBlink = millis();
-    }
   } else {
-    // Normal operation mode - LED steady on if connected
+    // Normal operation mode
     if (WiFi.status() == WL_CONNECTED) {
       wifi_is_connected = true;
-      digitalWrite(LED_PIN, LOW); // LED ON
     } else {
       wifi_is_connected = false;
       // Lost connection, try to reconnect
-      digitalWrite(LED_PIN, HIGH); // LED OFF
       Serial.println("WiFi disconnected, attempting to reconnect...");
       WiFi.reconnect();
       delay(5000);
@@ -195,7 +184,7 @@ void piggy_wifi_manager_update() {
   delay(10);
 }
 
-bool piggy_wifi_manager_is_connected() {
+bool gimi_pb_wifi_manager_is_connected() {
 
   return wifi_is_connected;
 }

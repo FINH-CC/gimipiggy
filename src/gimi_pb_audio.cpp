@@ -4,10 +4,10 @@
 
 #include "gimi_pb_audio.h"
 
-void piggy_audio_setup() {
+void gimi_pb_audio_setup() {
 }
 
-void piggy_audio_update() {
+void gimi_pb_audio_update() {
 }
 
 
@@ -65,8 +65,7 @@ unsigned int count = 0;
 
 I2SClass i2s;
 
-void setup() {
-  Serial.begin(115200);
+void gimi_pb_audio_setup() {
   Serial.println("I2S simple tone");
 
   i2s.setPins(I2S_BCLK, I2S_LRC, I2S_DIN);
@@ -78,7 +77,7 @@ void setup() {
   }
 }
 
-void loop() {
+void gimi_pb_audio_play() {
   if (count % halfWavelength == 0) {
     // invert the sample every half wavelength count multiple to generate square wave
     sample = -1 * sample;

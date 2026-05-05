@@ -5,8 +5,9 @@
 #ifndef __GIMI_PB_WIFI_H
 #define __GIMI_PB_WIFI_H
 
-void piggy_wifi_manager_setup(void);
-void piggy_wifi_manager_update(void);
-bool piggy_wifi_manager_is_connected(void);
+void gimi_pb_wifi_manager_setup(void);
+void gimi_pb_wifi_manager_update(void);
+bool gimi_pb_wifi_manager_is_connected(void);
+void gimi_pb_wifi_manager_restart_wifi_setup(void);
 
 #endif // __GIMI_PB_WIFI_H

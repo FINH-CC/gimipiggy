@@ -8,124 +8,21 @@
 
 #include "gimi_pb_printer.h"
 #include "gimi_pb_base64.h"
+#include "gimi_pb_bin_fetch.h"
+#include "gimi_pb_qr204.h"
+#include "gimi_pb_pins.h"
 
+#define RXD2 GPIO_22
+#define TXD2 GPIO_27
 
+HardwareSerial printerSerial(2);
 
+bool globalUpsideDown = true;
 
+void gimi_pb_printer_setup() {
 
-uint32_t printer_repeat_counter;
-#define PRINTER_REPEAT_COUNT 20000
+// Configure power control pins for printer.
 
-void piggy_printer_setup() {
-
-  piggy_experimental_printer_setup();
-
-  printer_repeat_counter = PRINTER_REPEAT_COUNT; // Ensure print happens on first pass.
-}
-
-void piggy_printer_update() {
-
-//  if(printer_repeat_counter == PRINTER_REPEAT_COUNT) {
-
-//	setDarknessAndDelay(205, 1750);
-//	setDarknessAndDelay(50, 1750);
-
-//    printBitmapGS_Method(epd_bitmap_gimi_small_logo, 77, 32);
-    printBitmapGS_Method(epd_bitmap_gimi_logo, 308, 128);
-//    printBitmapGS_Method(epd_bitmap_W384_Type_Test, 384, 1047);
-//    printBitmapGS_Method(epd_bitmap_image_tests, 384, 2603);
-//    printBitmapGS_Method(epd_bitmap_Type_Test_2, 384, 1372);
-//    printBitmapGS_Method(epd_bitmap_image_tests_5, 384, 2603);
-
-//	demoPrintAllFormats();
-
-//    printer_repeat_counter = 0;
-//  }
-
-//  printer_repeat_counter++;
-
-//  printBitmap(uint8_t* imageData, int width, int height);
-}
-
-
-
-
-
-
-// Struct for bitmap images - contains metadata for each available image
-struct BitmapImage {
- const char* name;           // Human-readable name for the image
- const unsigned char* data;  // Pointer to image data in PROGMEM
- int width;                  // Image width in pixels
- int height;                 // Image height in pixels
-};
-
-// List of all available images - stored in PROGMEM to save RAM
-const BitmapImage availableImages[] = {
- { "epd_bitmap_gimi_small_logo", epd_bitmap_gimi_small_logo, 77, 32 },
- { "epd_bitmap_gimi_logo", epd_bitmap_gimi_logo, 308, 128 }
-};
-// Calculate number of available images at compile time
-const int numAvailableImages = sizeof(availableImages) / sizeof(availableImages[0]);
-
-// Hardware pin definitions for ESP32
-#define RXD2 22 //16  // UART2 RX pin for printer communication
-#define TXD2 27 //17  // UART2 TX pin for printer communication
-// Control pins for printer power management
-//DJO#define GND 5    // Always LOW - printer ground control
-//DJO#define DTRD 4   // Not used in current implementation
-//DJO#define Vcc 21   // Always HIGH - printer power control
-// Button input pins with internal pullup
-#define Key1 35 //22  // Button 1 - cycles through images
-#define Key2 35 //23  // Button 2 - prints demo page
-
-// Serial communication setup
-HardwareSerial printerSerial(2);  // Use UART2 for printer communication
-// Constants for memory and performance optimization
-const int IMAGE_WIDTH = 200;   // Default image width (not currently used)
-const int IMAGE_HEIGHT = 56;   // Default image height (not currently used)
-const unsigned long debounceDelay = 200;  // Button debounce delay in milliseconds
-
-// Global state variables
-bool globalUpsideDown = true;          // Global upside-down printing flag
-unsigned long lastKey1Press = 0;      // Last time Key1 was pressed (for debouncing)
-unsigned long lastKey2Press = 0;      // Last time Key2 was pressed (for debouncing)
-int imageIndex = 0;                   // Current image index for button cycling
-
-// Memory diagnostics helper - prints current heap status for ESP32
-void printMemoryStats(const char* tag) {
- Serial.print("[MEM] ");
- Serial.print(tag);
- Serial.print(" | FreeHeap: ");
- Serial.print(ESP.getFreeHeap());
- Serial.print(" | MinFreeHeap: ");
- Serial.print(ESP.getMinFreeHeap());
- Serial.print(" | MaxAllocHeap: ");
- Serial.print(ESP.getMaxAllocHeap());
- Serial.print(" | HeapSize: ");
- Serial.println(ESP.getHeapSize());
-}
-
-// Set global upside-down printing mode for all output
-void setGlobalUpsideDown(bool enable) {
- globalUpsideDown = enable;
- upsideDownPrinting(enable ? 1 : 0);  // Apply to printer immediately
- Serial.print("Global upside-down set to: ");
- Serial.println(enable ? "ON" : "OFF");
-}
-
-// Arduino setup function - runs once at startup
-void piggy_experimental_printer_setup() {
- // Configure power control pins for printer
- //DJOpinMode(GND, OUTPUT);
- //DJOpinMode(Vcc, OUTPUT);
- //DJOdigitalWrite(GND, LOW);   // Ensure ground is always low
- //DJOdigitalWrite(Vcc, HIGH);  // Ensure power is always high
- // Configure button input pins with internal pullup resistors
- pinMode(Key1, INPUT_PULLUP);
- pinMode(Key2, INPUT_PULLUP);
- // Initialize serial communications
- Serial.begin(115200);                               // Debug monitor at high speed
  printerSerial.begin(9600, SERIAL_8N1, RXD2, TXD2); // Printer at standard thermal printer baud rate
  delay(1000);  // Give printer time to initialize
  // Set initial printer alignment to center
@@ -135,172 +32,209 @@ void piggy_experimental_printer_setup() {
  setGlobalUpsideDown(true);  // Default: enable upside-down printing
 }
 
-// Main Arduino loop - handles serial commands and button presses
-void piggy_experimental_printer_loop() {
- // Handle serial command input with static buffer for efficiency
- static String inputBuffer = "";
- inputBuffer.reserve(64);  // Pre-allocate string memory to reduce fragmentation
- // Process incoming serial data character by character
- while (Serial.available()) {
-   char c = Serial.read();
-   if (c == '\n' || c == '\r') {
-     // End of command - process if buffer has content
-     if (inputBuffer.length() > 0) {
-       handleSerialCommand(inputBuffer);
-       inputBuffer = "";  // Clear buffer for next command
-     }
-   } else {
-     inputBuffer += c;
-   }
- }
- // Button handling with debouncing
- // Key1: Print next image in sequence
- if (digitalRead(Key1) == LOW) {
-   if (millis() - lastKey1Press > debounceDelay) {
-     demoPrintNextImage();
-     lastKey1Press = millis();
-   }
- }
- // Key2: Print comprehensive demo page
- if (digitalRead(Key2) == LOW) {
-   if (millis() - lastKey2Press > debounceDelay) {
-     demoPrintAllFormats();
-     lastKey2Press = millis();
-   }
- }
+void gimi_pb_printer_print_binary() {
+
+  if (gimi_pb_get_bin_file_available()) {
+
+    size_t filesize = gimi_pb_get_bin_file_size();
+    size_t fileheight = filesize / (PIXELS_PER_LINE / 8);
+
+    if(filesize > 0 && filesize % (PIXELS_PER_LINE / 8) == 0) {
+
+      Serial.printf("Image dimensions size %d width %d height %d \n", filesize, PIXELS_PER_LINE, fileheight);  
+      printBitmap(gimi_pb_get_bin_file_buffer(), PIXELS_PER_LINE, fileheight);
+    }
+
+    gimi_pb_set_bin_file_printed();
+  }
+
 }
 
-// Parse and execute serial commands
-void handleSerialCommand(String cmd) {
- cmd.trim();  // Remove leading/trailing whitespace
- if (cmd.length() == 0) return;
- // Split command and parameters for processing
- int spaceIdx = cmd.indexOf(' ');
- String command = (spaceIdx == -1) ? cmd : cmd.substring(0, spaceIdx);
- String params = (spaceIdx == -1) ? "" : cmd.substring(spaceIdx + 1);
- command.toUpperCase();  // Make command case-insensitive
- // Command processing - organized alphabetically for maintainability
- if (command == "HELP") {
-   // Display all available commands and their usage
-   Serial.println("Available commands:");
-   Serial.println("QRCODE <data>");
-   Serial.println("BARCODE <type> <data> (CODE128, UPCA, EAN13)");
-   Serial.println("ALIGN <0|1|2>");
-   Serial.println("DARKNESS <percent 50-205> <delay_us 0-1750>");
-   Serial.print("BITMAP <name> (Available:");
-   for (int i = 0; i < numAvailableImages; ++i) {
-     Serial.print(" ");
-     Serial.print(availableImages[i].name);
-     if (i < numAvailableImages - 1) Serial.print(",");
-   }
-   Serial.println(")");
-   Serial.println("TESTPATTERN <pattern 0-3>");
-   Serial.println("TEXT <text> (bitmap text)");
-   Serial.println("TEXTMODE <text> (native text)");
-   Serial.println("UPSIDEDOWN <0|1>");
-   Serial.println("UNDERLINE <0|1|2>");
-   Serial.println("INVERSE <0|1>");
-   Serial.println("FEED <n>");
-   Serial.println("MEM");
-   Serial.println("GLOBALUPSIDEDOWN <0|1> (all output upside down)");
-   Serial.println("---");
+void gimi_pb_printer_print_base64() {
+
+    printBitmapGS_Method(epd_bitmap_gimi_logo, 77, 32); // Hard-coded for internal set-up page printed before WifI connection is established.
+}
+
+// Print bitmap image using standard GS v command - optimized for memory usage
+void printBitmap(uint8_t* imageData, int width, int height) {
+ // Validate dimensions to prevent printer damage or memory issues
+ if (width <= 0 || height <= 0 || width > 512 || height > 1662) {
+   Serial.println("Invalid image dimensions");
    return;
  }
- if (command == "QRCODE") {
-   printQRCode(params);
-   return;
+ // Calculate bytes per line (width must be multiple of 8 for 1-bit images)
+ int bytesPerLine = (width + 7) / 8;
+ // Use normal mode (m=0) for standard density printing
+ uint8_t m = 0;
+ // Calculate command parameters for image size
+ uint8_t xL = bytesPerLine & 0xFF;        // Low byte of horizontal bytes
+ uint8_t xH = (bytesPerLine >> 8) & 0xFF; // High byte of horizontal bytes
+ uint8_t yL = height & 0xFF;              // Low byte of vertical dots
+ uint8_t yH = (height >> 8) & 0xFF;       // High byte of vertical dots
+ // Send GS v command for bitmap printing
+ printerSerial.write(0x1D);  // GS
+ printerSerial.write(0x76);  // v
+ printerSerial.write(0x30);  // 0
+ printerSerial.write(m);     // mode
+ printerSerial.write(xL);    // xL
+ printerSerial.write(xH);    // xH
+ printerSerial.write(yL);    // yL
+ printerSerial.write(yH);    // yH
+ // Send image data efficiently
+ int totalBytes = bytesPerLine * height;
+ for (int i = 0; i < totalBytes; i++) {
+   printerSerial.write(imageData[i]);
  }
- if (command == "BARCODE") {
-   parseBarcode(params);
-   return;
- }
- if (command == "ALIGN") {
-   int n = params.toInt();
-   align(n);
-   Serial.println("Align set to: " + String(n));
-   return;
- }
- if (command == "DARKNESS") {
-   // Parse darkness parameters: percentage and delay
-   int sp = params.indexOf(' ');
-   if (sp == -1) {
-     Serial.println("Usage: DARKNESS <percent> <delay_us>");
-     return;
-   }
-   int percent = params.substring(0, sp).toInt();
-   int delayus = params.substring(sp + 1).toInt();
-   setDarknessAndDelay(percent, delayus);
-   Serial.println("Darkness set to: " + String(percent) + "% Delay: " + String(delayus) + "us");
-   return;
- }
- if (command == "BITMAP") {
-   if (params.length() == 0) {
-     // Show usage and available bitmaps
-     Serial.println("Usage: BITMAP <name>");
-     Serial.print("Available:");
-     for (int i = 0; i < numAvailableImages; ++i) {
-       Serial.print(" ");
-       Serial.print(availableImages[i].name);
-       if (i < numAvailableImages - 1) Serial.print(",");
+ Serial.println("Bitmap printed: " + String(width) + "x" + String(height));
+ feedLines(2);
+}
+
+// Main bitmap printing method using GS v command with chunking
+// This is the primary method for printing large images efficiently
+void printBitmapGS_Method(const unsigned char* progmemData, int width, int height) {
+ upsideDownPrinting(globalUpsideDown ? 1 : 0);
+ align(1);  // Center align for images
+ // Set printer to maximum darkness for better image quality
+ printerSerial.write(0x12);  // DC2
+ printerSerial.write(0x23);  // #
+ printerSerial.write(0x9F);  // Maximum darkness
+ delay(50);
+ const unsigned char* dataToPrint = progmemData;
+ int w = width, h = height;
+ uint8_t* rotated = nullptr;
+ // Handle global upside-down printing by rotating the entire image
+ if (globalUpsideDown) {
+   // Copy from PROGMEM to RAM, then rotate 180°
+   int bytesPerLine = (width + 7) / 8;
+   int totalBytes = bytesPerLine * height;
+   uint8_t* ramCopy = (uint8_t*)malloc(totalBytes);
+   if (ramCopy) {
+     // Copy image data from PROGMEM to RAM for rotation
+     for (int i = 0; i < totalBytes; ++i)
+       ramCopy[i] = pgm_read_byte(progmemData + i);
+     // Rotate the image 180 degrees
+     rotated = rotateBitmap1bpp_180(ramCopy, width, height);
+     free(ramCopy);
+     if (rotated) {
+       dataToPrint = rotated;
      }
-     Serial.println();
-     return;
    }
-   printNamedBitmap(params);
+ }
+
+ // Validate image dimensions
+ if (w <= 0 || h <= 0) {
+   Serial.println("Invalid image size");
+   if (rotated) free(rotated);
    return;
  }
- if (command == "TESTPATTERN") {
-   int pattern = params.toInt();
-   printTestPattern(100, 50, pattern);
-   return;
+ int bytesPerLine = (w + 7) / 8;
+ int totalChunks = (h + 23) / 24;  // Process in 24-line chunks for memory efficiency
+ // Set line spacing to 0 for seamless image printing
+ printerSerial.write(0x1B);  // ESC
+ printerSerial.write(0x33);  // '3'
+ printerSerial.write(0x00);  // 0 dots line spacing
+ // Process image in chunks to manage memory usage
+ for (int chunk = 0; chunk < totalChunks; chunk++) {
+   int linesInChunk = min(24, h - chunk * 24);  // Last chunk may be smaller
+   // Calculate chunk parameters
+   int yL = linesInChunk & 0xFF;
+   int yH = (linesInChunk >> 8) & 0xFF;
+   int xL = bytesPerLine & 0xFF;
+   int xH = (bytesPerLine >> 8) & 0xFF;
+   // Send GS v command for this chunk
+   printerSerial.write(0x1D);  // GS
+   printerSerial.write(0x76);  // 'v'
+   printerSerial.write(0x30);  // '0'
+   printerSerial.write(0x00);  // m = 0 (normal density)
+   printerSerial.write(xL);
+   printerSerial.write(xH);
+   printerSerial.write(yL);
+   printerSerial.write(yH);
+   // Send chunk data
+   for (int row = 0; row < linesInChunk; row++) {
+     int baseIndex = (chunk * 24 + row) * bytesPerLine;
+     for (int col = 0; col < bytesPerLine; col++) {
+       printerSerial.write(dataToPrint[baseIndex + col]);
+     }
+   }
+   delay(30);  // Allow printer to process chunk
  }
- if (command == "TEXTMODE") {
-   printerSerial.println(params);
-   Serial.println("Printed native text: " + params);
-   feedLines(2);
-   return;
+
+ // Feed paper and restore normal settings
+ printerSerial.write(0x1B);  // ESC
+ printerSerial.write(0x64);  // d
+ printerSerial.write(3);     // Feed 3 lines
+ Serial.println("Finished printing image in chunks.");
+ // Reset printer darkness to normal
+ printerSerial.write(0x12);  // DC2
+ printerSerial.write(0x23);  // #
+ printerSerial.write(0x58);  // Normal darkness
+ delay(50);
+ // Clean up rotated image memory if allocated
+ if (rotated) free(rotated);
+}
+
+// Alternative bitmap printing method using DC2 * command
+// This method prints line by line to avoid spacing issues
+void printBitmapDC2_Method(const unsigned char* progmemData, int width, int height) {
+ upsideDownPrinting(globalUpsideDown ? 1 : 0);
+ // Set printer to maximum darkness for bitmap printing
+ printerSerial.write(0x12);  // DC2
+ printerSerial.write(0x23);  // #
+ printerSerial.write(0x9F);  // Maximum darkness setting
+ delay(50);
+ Serial.println("Using DC2 * method (Method 1)...");
+ int bytesPerLine = (width + 7) / 8;
+ // Print line by line to avoid spacing issues
+ for (int line = 0; line < height; line++) {
+   // Send DC2 * command for each line
+   printerSerial.write(0x12);                 // DC2
+   printerSerial.write(0x2A);                 // *
+   printerSerial.write(0x01);                 // r = 1 line height
+   printerSerial.write(bytesPerLine & 0xFF);  // n = bytes per line
+   // Send one line of data from PROGMEM
+   for (int i = 0; i < bytesPerLine; i++) {
+     uint8_t byte_val = pgm_read_byte(progmemData + (line * bytesPerLine) + i);
+     printerSerial.write(byte_val);
+   }
+   // Small delay between lines for printer processing
+   delayMicroseconds(10);
  }
- if (command == "UPSIDEDOWN") {
-   int n = params.toInt();
-   upsideDownPrinting(n);
-   Serial.println("UpsideDown: " + String(n));
-   printerSerial.println("Sample: UpsideDown mode " + String(n));
-   feedLines(2);
-   return;
+ Serial.println("DC2 * method completed!");
+ feedLines(2);
+ // Reset printer darkness to normal
+ printerSerial.write(0x12);  // DC2
+ printerSerial.write(0x23);  // #
+ printerSerial.write(0x58);  // Normal darkness setting
+ delay(50);
+}
+
+// Helper function: Rotate a 1bpp bitmap by 180 degrees
+// Returns a newly allocated buffer that caller must free()
+// Used for upside-down printing when globalUpsideDown is enabled
+uint8_t* rotateBitmap1bpp_180(const uint8_t* src, int width, int height) {
+ int bytesPerLine = (width + 7) / 8;
+ int totalBytes = bytesPerLine * height;
+ // Allocate destination buffer and clear it
+ uint8_t* dst = (uint8_t*)calloc(totalBytes, 1);
+ if (!dst) return nullptr;
+ // Rotate each pixel by 180 degrees
+ for (int y = 0; y < height; ++y) {
+   for (int x = 0; x < width; ++x) {
+     // Extract pixel from source
+     int srcByte = y * bytesPerLine + (x / 8);
+     int srcBit = 7 - (x % 8);
+     bool pixel = (src[srcByte] >> srcBit) & 1;
+     // Calculate rotated position
+     int nx = width - 1 - x;
+     int ny = height - 1 - y;
+     // Set pixel in destination
+     int dstByte = ny * bytesPerLine + (nx / 8);
+     int dstBit = 7 - (nx % 8);
+     if (pixel) dst[dstByte] |= (1 << dstBit);
+   }
  }
- if (command == "UNDERLINE") {
-   int n = params.toInt();
-   underlineMode(n);
-   Serial.println("Underline: " + String(n));
-   printerSerial.println("Sample: Underline mode " + String(n));
-   feedLines(2);
-   return;
- }
- if (command == "INVERSE") {
-   int n = params.toInt();
-   inverseMode(n);
-   Serial.println("Inverse: " + String(n));
-   printerSerial.println("Sample: Inverse mode " + String(n));
-   feedLines(2);
-   return;
- }
- if (command == "FEED") {
-   int n = params.toInt();
-   feedLines(n);
-   Serial.println("Feed lines: " + String(n));
-   return;
- }
- if (command == "MEM") {
-   printMemoryStats("on demand");
-   return;
- }
- if (command == "GLOBALUPSIDEDOWN") {
-   int n = params.toInt();
-   setGlobalUpsideDown(n != 0);
-   return;
- }
- // Unknown command
- Serial.println("Unknown command. Type HELP for list.");
+ return dst;
 }
 
 // Set print darkness (% from 50 to 205%) and break delay (µs)
@@ -534,40 +468,6 @@ void inverseMode(int n) {
  delay(500);
 }
 
-// Print bitmap image using standard GS v command - optimized for memory usage
-void printBitmap(uint8_t* imageData, int width, int height) {
- // Validate dimensions to prevent printer damage or memory issues
- if (width <= 0 || height <= 0 || width > 512 || height > 1662) {
-   Serial.println("Invalid image dimensions");
-   return;
- }
- // Calculate bytes per line (width must be multiple of 8 for 1-bit images)
- int bytesPerLine = (width + 7) / 8;
- // Use normal mode (m=0) for standard density printing
- uint8_t m = 0;
- // Calculate command parameters for image size
- uint8_t xL = bytesPerLine & 0xFF;        // Low byte of horizontal bytes
- uint8_t xH = (bytesPerLine >> 8) & 0xFF; // High byte of horizontal bytes
- uint8_t yL = height & 0xFF;              // Low byte of vertical dots
- uint8_t yH = (height >> 8) & 0xFF;       // High byte of vertical dots
- // Send GS v command for bitmap printing
- printerSerial.write(0x1D);  // GS
- printerSerial.write(0x76);  // v
- printerSerial.write(0x30);  // 0
- printerSerial.write(m);     // mode
- printerSerial.write(xL);    // xL
- printerSerial.write(xH);    // xH
- printerSerial.write(yL);    // yL
- printerSerial.write(yH);    // yH
- // Send image data efficiently
- int totalBytes = bytesPerLine * height;
- for (int i = 0; i < totalBytes; i++) {
-   printerSerial.write(imageData[i]);
- }
- Serial.println("Bitmap printed: " + String(width) + "x" + String(height));
- feedLines(2);
-}
-
 // Create test pattern in bitmap buffer - useful for printer testing
 void createTestPattern(uint8_t* buffer, int width, int height, int pattern) {
  int bytesPerLine = (width + 7) / 8;
@@ -634,232 +534,24 @@ void printTestPattern(int width, int height, int pattern) {
  printMemoryStats("after free test pattern");
 }
 
-// Alternative bitmap printing method using DC2 * command
-// This method prints line by line to avoid spacing issues
-void printBitmapDC2_Method(const unsigned char* progmemData, int width, int height) {
- upsideDownPrinting(globalUpsideDown ? 1 : 0);
- // Set printer to maximum darkness for bitmap printing
- printerSerial.write(0x12);  // DC2
- printerSerial.write(0x23);  // #
- printerSerial.write(0x9F);  // Maximum darkness setting
- delay(50);
- Serial.println("Using DC2 * method (Method 1)...");
- int bytesPerLine = (width + 7) / 8;
- // Print line by line to avoid spacing issues
- for (int line = 0; line < height; line++) {
-   // Send DC2 * command for each line
-   printerSerial.write(0x12);                 // DC2
-   printerSerial.write(0x2A);                 // *
-   printerSerial.write(0x01);                 // r = 1 line height
-   printerSerial.write(bytesPerLine & 0xFF);  // n = bytes per line
-   // Send one line of data from PROGMEM
-   for (int i = 0; i < bytesPerLine; i++) {
-     uint8_t byte_val = pgm_read_byte(progmemData + (line * bytesPerLine) + i);
-     printerSerial.write(byte_val);
-   }
-   // Small delay between lines for printer processing
-   delayMicroseconds(10);
- }
- Serial.println("DC2 * method completed!");
- feedLines(2);
- // Reset printer darkness to normal
- printerSerial.write(0x12);  // DC2
- printerSerial.write(0x23);  // #
- printerSerial.write(0x58);  // Normal darkness setting
- delay(50);
+// Memory diagnostics helper - prints current heap status for ESP32
+void printMemoryStats(const char* tag) {
+ Serial.print("[MEM] ");
+ Serial.print(tag);
+ Serial.print(" | FreeHeap: ");
+ Serial.print(ESP.getFreeHeap());
+ Serial.print(" | MinFreeHeap: ");
+ Serial.print(ESP.getMinFreeHeap());
+ Serial.print(" | MaxAllocHeap: ");
+ Serial.print(ESP.getMaxAllocHeap());
+ Serial.print(" | HeapSize: ");
+ Serial.println(ESP.getHeapSize());
 }
 
-// Helper function: Rotate a 1bpp bitmap by 180 degrees
-// Returns a newly allocated buffer that caller must free()
-// Used for upside-down printing when globalUpsideDown is enabled
-uint8_t* rotateBitmap1bpp_180(const uint8_t* src, int width, int height) {
- int bytesPerLine = (width + 7) / 8;
- int totalBytes = bytesPerLine * height;
- // Allocate destination buffer and clear it
- uint8_t* dst = (uint8_t*)calloc(totalBytes, 1);
- if (!dst) return nullptr;
- // Rotate each pixel by 180 degrees
- for (int y = 0; y < height; ++y) {
-   for (int x = 0; x < width; ++x) {
-     // Extract pixel from source
-     int srcByte = y * bytesPerLine + (x / 8);
-     int srcBit = 7 - (x % 8);
-     bool pixel = (src[srcByte] >> srcBit) & 1;
-     // Calculate rotated position
-     int nx = width - 1 - x;
-     int ny = height - 1 - y;
-     // Set pixel in destination
-     int dstByte = ny * bytesPerLine + (nx / 8);
-     int dstBit = 7 - (nx % 8);
-     if (pixel) dst[dstByte] |= (1 << dstBit);
-   }
- }
- return dst;
-}
-
-// Main bitmap printing method using GS v command with chunking
-// This is the primary method for printing large images efficiently
-void printBitmapGS_Method(const unsigned char* progmemData, int width, int height) {
- upsideDownPrinting(globalUpsideDown ? 1 : 0);
- align(1);  // Center align for images
- // Set printer to maximum darkness for better image quality
- printerSerial.write(0x12);  // DC2
- printerSerial.write(0x23);  // #
- printerSerial.write(0x9F);  // Maximum darkness
- delay(50);
- const unsigned char* dataToPrint = progmemData;
- int w = width, h = height;
- uint8_t* rotated = nullptr;
- // Handle global upside-down printing by rotating the entire image
- if (globalUpsideDown) {
-   // Copy from PROGMEM to RAM, then rotate 180°
-   int bytesPerLine = (width + 7) / 8;
-   int totalBytes = bytesPerLine * height;
-   uint8_t* ramCopy = (uint8_t*)malloc(totalBytes);
-   if (ramCopy) {
-     // Copy image data from PROGMEM to RAM for rotation
-     for (int i = 0; i < totalBytes; ++i)
-       ramCopy[i] = pgm_read_byte(progmemData + i);
-     // Rotate the image 180 degrees
-     rotated = rotateBitmap1bpp_180(ramCopy, width, height);
-     free(ramCopy);
-     if (rotated) {
-       dataToPrint = rotated;
-     }
-   }
- }
-
- // Validate image dimensions
- if (w <= 0 || h <= 0) {
-   Serial.println("Invalid image size");
-   if (rotated) free(rotated);
-   return;
- }
- int bytesPerLine = (w + 7) / 8;
- int totalChunks = (h + 23) / 24;  // Process in 24-line chunks for memory efficiency
- // Set line spacing to 0 for seamless image printing
- printerSerial.write(0x1B);  // ESC
- printerSerial.write(0x33);  // '3'
- printerSerial.write(0x00);  // 0 dots line spacing
- // Process image in chunks to manage memory usage
- for (int chunk = 0; chunk < totalChunks; chunk++) {
-   int linesInChunk = min(24, h - chunk * 24);  // Last chunk may be smaller
-   // Calculate chunk parameters
-   int yL = linesInChunk & 0xFF;
-   int yH = (linesInChunk >> 8) & 0xFF;
-   int xL = bytesPerLine & 0xFF;
-   int xH = (bytesPerLine >> 8) & 0xFF;
-   // Send GS v command for this chunk
-   printerSerial.write(0x1D);  // GS
-   printerSerial.write(0x76);  // 'v'
-   printerSerial.write(0x30);  // '0'
-   printerSerial.write(0x00);  // m = 0 (normal density)
-   printerSerial.write(xL);
-   printerSerial.write(xH);
-   printerSerial.write(yL);
-   printerSerial.write(yH);
-   // Send chunk data
-   for (int row = 0; row < linesInChunk; row++) {
-     int baseIndex = (chunk * 24 + row) * bytesPerLine;
-     for (int col = 0; col < bytesPerLine; col++) {
-       printerSerial.write(dataToPrint[baseIndex + col]);
-     }
-   }
-   delay(30);  // Allow printer to process chunk
- }
-
- // Feed paper and restore normal settings
- printerSerial.write(0x1B);  // ESC
- printerSerial.write(0x64);  // d
- printerSerial.write(3);     // Feed 3 lines
- Serial.println("Finished printing image in chunks.");
- // Reset printer darkness to normal
- printerSerial.write(0x12);  // DC2
- printerSerial.write(0x23);  // #
- printerSerial.write(0x58);  // Normal darkness
- delay(50);
- // Clean up rotated image memory if allocated
- if (rotated) free(rotated);
-}
-
-// Helper function to print a named bitmap from the availableImages array
-void printNamedBitmap(String imageName) {
- imageName.trim();
- imageName.toLowerCase();  // Make search case-insensitive
- // Search for matching image name
- for (int i = 0; i < numAvailableImages; ++i) {
-   String candidate = String(availableImages[i].name);
-   candidate.toLowerCase();
-   if (imageName == candidate) {
-     printBitmapGS_Method(availableImages[i].data, availableImages[i].width, availableImages[i].height);
-     return;
-   }
- }
- Serial.println("Unknown image name. Type HELP for list.");
-}
-
-// Demo function: Print next image in sequence (triggered by Key1)
-void demoPrintNextImage() {
- static int currentImageIndex = 0;
- const BitmapImage& img = availableImages[currentImageIndex];
- Serial.print("[Key1] Printing image: ");
- Serial.println(img.name);
- printBitmapGS_Method(img.data, img.width, img.height);
- // Advance to next image, wrap around to beginning
- currentImageIndex = (currentImageIndex + 1) % numAvailableImages;
-}
-
-// Demo function: Print comprehensive demo page (triggered by Key2)
-// Shows all printer capabilities in one printout
-void demoPrintAllFormats() {
- Serial.println("[Key2] Printing all barcodes, QR, and formatted text...");
- // Print demo header
- align(1);  // Center align
- printerSerial.println("--- DEMO PAGE ---");
- feedLines(1);
- // Demonstrate different barcode types
- align(0);  // Left align for labels
- printerSerial.println("CODE128: 123456");
- printBarcode_CODE128("123456");
- printerSerial.println("UPCA: 12345678901");
- printBarcode_UPCA("12345678901");
- printerSerial.println("EAN13: 123456789012");
- printBarcode_EAN13("123456789012");
- feedLines(1);
- // Demonstrate QR Code
- align(1);  // Center align for QR
- printerSerial.println("QR Code: HelloWorld");
- printQRCode("HelloWorld");
- feedLines(1);
- // Demonstrate text alignment
- align(0);
- printerSerial.println("Align Left");
- align(1);
- printerSerial.println("Align Center");
- align(2);
- printerSerial.println("Align Right");
- feedLines(1);
- // Demonstrate underline modes
- underlineMode(1);
- printerSerial.println("Underline 1");
- underlineMode(2);
- printerSerial.println("Underline 2");
- underlineMode(0);  // Turn off underline
- feedLines(1);
- // Demonstrate inverse printing
- inverseMode(1);
- printerSerial.println("Inverse ON");
- inverseMode(0);
- printerSerial.println("Inverse OFF");
- feedLines(1);
- // Demonstrate upside down printing
- upsideDownPrinting(1);
- printerSerial.println("Upside Down ON");
- upsideDownPrinting(0);
- printerSerial.println("Upside Down OFF");
- feedLines(2);
- // Print normal footer text
- printerSerial.println("Normal text");
- feedLines(2);
- Serial.println("[Key2] Demo page printed.");
+// Set global upside-down printing mode for all output
+void setGlobalUpsideDown(bool enable) {
+ globalUpsideDown = enable;
+ upsideDownPrinting(enable ? 1 : 0);  // Apply to printer immediately
+ Serial.print("Global upside-down set to: ");
+ Serial.println(enable ? "ON" : "OFF");
 }

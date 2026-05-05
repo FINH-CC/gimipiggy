@@ -15,7 +15,7 @@ const char htmlPage[] PROGMEM = R"rawliteral(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gimi Piggy WiFi Setup</title>
+    <title>Gimi PB WiFi Setup</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -106,9 +106,9 @@ const char htmlPage[] PROGMEM = R"rawliteral(
 </head>
 <body>
     <div class="container">
-        <h1>📡 Gimi Piggy WiFi Setup</h1>
+        <h1>📡 Gimi PB WiFi Setup</h1>
         <div class="info">
-            Connect your Piggy to your WiFi network
+            Connect your Gimi PB to your WiFi network
         </div>
         
         <button class="scan-btn" onclick="scanNetworks()">Scan Networks</button>
@@ -190,7 +190,7 @@ const char successPage[] PROGMEM = R"rawliteral(
 <body>
     <div class="container">
         <h1>✓ Configuration Saved!</h1>
-        <p>Piggy is now connecting to your WiFi network.</p>
+        <p>Gimi PB is now connecting to your WiFi network.</p>
         <p>The device will restart automatically.</p>
     </div>
 </body>
