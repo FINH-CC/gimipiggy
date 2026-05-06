@@ -8,10 +8,10 @@
 #include "gimi_pb_pins.h"
 
 // set pin numbers
-const int redPin = GPIO_04;
-const int greenPin = GPIO_16;
-const int bluePin = GPIO_17;
-const int backlightPin = GPIO_21;
+const int redPin = GIMI_PB_GPIO_04;
+const int greenPin = GIMI_PB_GPIO_16;
+const int bluePin = GIMI_PB_GPIO_17;
+const int backlightPin = GIMI_PB_GPIO_21;
 
 void gimi_pb_leds_setup() {
 
@@ -21,11 +21,64 @@ void gimi_pb_leds_setup() {
 //  pinMode(backlightPin, OUTPUT);
 
   digitalWrite(redPin, HIGH);
-  digitalWrite(greenPin, LOW);
+  digitalWrite(greenPin, HIGH);
   digitalWrite(bluePin, HIGH);
 //  digitalWrite(backlightPin, HIGH);
 }
 
-void gimi_pb_leds_update() {
+void gimi_pb_leds_off() {
+
+  digitalWrite(redPin, HIGH);
+  digitalWrite(greenPin, HIGH);
+  digitalWrite(bluePin, HIGH);
+}
+
+void gimi_pb_leds_red() {
+
+  digitalWrite(redPin, LOW);
+  digitalWrite(greenPin, HIGH);
+  digitalWrite(bluePin, HIGH);
+}
+
+void gimi_pb_leds_green() {
+
+  digitalWrite(redPin, HIGH);
+  digitalWrite(greenPin, LOW);
+  digitalWrite(bluePin, HIGH);
+}
+
+void gimi_pb_leds_blue() {
+
+  digitalWrite(redPin, HIGH);
+  digitalWrite(greenPin, HIGH);
+  digitalWrite(bluePin, LOW);
+}
+
+void gimi_pb_leds_yellow() {
+
+  digitalWrite(redPin, LOW);
+  digitalWrite(greenPin, LOW);
+  digitalWrite(bluePin, HIGH);
+}
+
+void gimi_pb_leds_magenta() {
+
+  digitalWrite(redPin, LOW);
+  digitalWrite(greenPin, HIGH);
+  digitalWrite(bluePin, LOW);
+}
+
+void gimi_pb_leds_cyan() {
+
+  digitalWrite(redPin, HIGH);
+  digitalWrite(greenPin, LOW);
+  digitalWrite(bluePin, LOW);
+}
+
+void gimi_pb_leds_white() {
+
+  digitalWrite(redPin, LOW);
+  digitalWrite(greenPin, LOW);
+  digitalWrite(bluePin, LOW);
 }
 

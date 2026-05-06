@@ -5,6 +5,8 @@
 #ifndef __GIMI_PB_SERVER_H
 #define __GIMI_PB_SERVER_H
 
+#define SLEEP_TIME_BETWEEN_FETCH 60000000 // In microseconds. 1,000,000 us= 1 second. 60000000 = 60 seconds.
+
 #define ETAG_SIZE 64
 #define MAX_URL_LENGTH 256
 

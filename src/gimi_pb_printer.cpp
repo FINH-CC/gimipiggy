@@ -12,8 +12,8 @@
 #include "gimi_pb_qr204.h"
 #include "gimi_pb_pins.h"
 
-#define RXD2 GPIO_22
-#define TXD2 GPIO_27
+#define RXD2 GIMI_PB_GPIO_22
+#define TXD2 GIMI_PB_GPIO_27
 
 HardwareSerial printerSerial(2);
 

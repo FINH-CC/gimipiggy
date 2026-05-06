@@ -9,7 +9,7 @@
 #include "gimi_pb_pins.h"
 
 //#define WPS_BUTTON_PIN 0 // Using onboard BOOT button on many ESP32 devkits
-#define WPS_BUTTON_PIN GPIO_35 // Using EARS pushbutton.
+#define WPS_BUTTON_PIN GIMI_PB_GPIO_35 // Using EARS pushbutton.
 #define ESP_WPS_MODE WPS_TYPE_PBC
 
 static esp_wps_config_t config;

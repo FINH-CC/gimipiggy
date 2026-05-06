@@ -8,7 +8,7 @@
 #include "gimi_pb_pins.h"
 
 // set pin numbers
-const int buttonPin = GPIO_35;  // Pushbutton pin.
+const int buttonPin = GIMI_PB_GPIO_35;  // Pushbutton pin. GIMI_PB_GPIO_00; // BOOT Button pin. //
 
 // variable for storing the pushbutton status 
 int buttonState = 0;
