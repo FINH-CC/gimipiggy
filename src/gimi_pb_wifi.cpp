@@ -77,19 +77,6 @@ void handleSave() {
   }
 }
 
-void gimi_pb_wifi_manager_restart_wifi_setup() {
-
-    Serial.println("Clearing WiFi credentials\n");
-
-    // Save to preferences
-    preferences.putString("ssid", "");
-    preferences.putString("password", "");
-
-    delay(2000);
-    Serial.println("Restarting ESP32...");
-    ESP.restart();
-}
-
 void startConfigMode() {
     
   configMode = true;
@@ -162,7 +149,12 @@ void gimi_pb_wifi_manager_setup() {
   startConfigMode();
 }
 
-void gimi_pb_wifi_manager_update() {
+bool gimi_pb_wifi_manager_is_config_mode() {
+
+  return configMode;
+}
+
+void gimi_pb_wifi_manager_reconnect() {
   
   if (configMode) {
     dnsServer.processNextRequest();
@@ -178,6 +170,9 @@ void gimi_pb_wifi_manager_update() {
       Serial.println("WiFi disconnected, attempting to reconnect...");
       WiFi.reconnect();
       delay(5000);
+
+      if (WiFi.status() == WL_CONNECTED)
+        wifi_is_connected = true;
     }
   }
     
@@ -188,3 +183,24 @@ bool gimi_pb_wifi_manager_is_connected() {
 
   return wifi_is_connected;
 }
+
+void gimi_pb_wifi_manager_disconnect() {
+  
+  Serial.println("WiFi being disconnected.");
+  WiFi.disconnect(false, false);
+  wifi_is_connected = false;
+}
+
+void gimi_pb_wifi_manager_restart_wifi_setup() {
+
+    Serial.println("Clearing WiFi credentials\n");
+
+    // Save to preferences
+    preferences.putString("ssid", "");
+    preferences.putString("password", "");
+
+    delay(2000);
+    Serial.println("Restarting ESP32...");
+    ESP.restart();
+}
+

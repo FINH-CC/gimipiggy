@@ -5,7 +5,7 @@
 #ifndef __GIMI_PB_PINS_H
 #define __GIMI_PB_PINS_H
 
-#define GIMI_PB_GPIO_00 0 // Boot Button, also used to clear WiFi settings, when device woken by push button. Press and HOLD puush button, whilst PRESS-AND_RELEASING this button.
+#define GIMI_PB_GPIO_00 0 // Boot Button, also used to clear WiFi settings, when device woken by push button. Press and PRESS-AND-RELEASE the EARS push button, whilst HOLDING DOWN this button.
 #define GIMI_PB_GPIO_01 1
 #define GIMI_PB_GPIO_02 2
 #define GIMI_PB_GPIO_03 3
