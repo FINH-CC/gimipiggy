@@ -18,7 +18,8 @@
 
 
 
-void gimi_pb_printer_setup(void);
+void gimi_pb_printer_begin(void);
+void gimi_pb_printer_end(void);
 void gimi_pb_printer_print_base64(void);
 void gimi_pb_printer_print_binary(void);
 

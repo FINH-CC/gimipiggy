@@ -12,12 +12,39 @@
 
 #define GIMI_PB_RECEIPTS_TOTAL 6
 
-#define GIMI_PB_RECEIPT_0_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
+// Uncomment ONLY ONE block of URL's below, to select which server (and/or which user profile that you want THIS device to use).
+
+// Dom's Github testbed.
+/*#define GIMI_PB_RECEIPT_0_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
 #define GIMI_PB_RECEIPT_1_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
 #define GIMI_PB_RECEIPT_2_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
 #define GIMI_PB_RECEIPT_3_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
 #define GIMI_PB_RECEIPT_4_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
-#define GIMI_PB_RECEIPT_5_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
+#define GIMI_PB_RECEIPT_5_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"*/
+
+// pig_001 Real live FINH server.
+#define GIMI_PB_RECEIPT_0_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/welcome.bin"
+#define GIMI_PB_RECEIPT_1_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/default.bin"
+#define GIMI_PB_RECEIPT_2_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/savings.bin"
+#define GIMI_PB_RECEIPT_3_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/celebration.bin"
+#define GIMI_PB_RECEIPT_4_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/reminder.bin"
+#define GIMI_PB_RECEIPT_5_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/notification.bin"
+
+// pig_002 Real live FINH server.
+/*#define GIMI_PB_RECEIPT_0_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_002/welcome.bin"
+#define GIMI_PB_RECEIPT_1_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_002/default.bin"
+#define GIMI_PB_RECEIPT_2_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_002/savings.bin"
+#define GIMI_PB_RECEIPT_3_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_002/celebration.bin"
+#define GIMI_PB_RECEIPT_4_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_002/reminder.bin"
+#define GIMI_PB_RECEIPT_5_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_002/notification.bin"*/
+
+// pig_003 Real live FINH server.
+/*#define GIMI_PB_RECEIPT_0_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_003/welcome.bin"
+#define GIMI_PB_RECEIPT_1_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_003/default.bin"
+#define GIMI_PB_RECEIPT_2_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_003/savings.bin"
+#define GIMI_PB_RECEIPT_3_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_003/celebration.bin"
+#define GIMI_PB_RECEIPT_4_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_003/reminder.bin"
+#define GIMI_PB_RECEIPT_5_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_003/notification.bin"*/
 
 #define GIMI_PB_RECEIPT_NULL_ETAG "0000000000000000000000000000000000000000000000000000000000000000"
 

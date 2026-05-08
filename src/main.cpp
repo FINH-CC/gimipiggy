@@ -22,7 +22,6 @@ void setup() {
 
   gimi_pb_wifi_manager_setup();
   gimi_pb_bin_file_setup();
-  gimi_pb_printer_setup();
   gimi_pb_buttons_setup();
   gimi_pb_leds_setup();
 
@@ -31,7 +30,9 @@ void setup() {
   esp_sleep_enable_timer_wakeup(SLEEP_TIME_BETWEEN_FETCH);
 
   // Print the welcome and set-up instructions. These are stored on the device in flash, as wifi may not yet have been set up.
+  gimi_pb_printer_begin();
 //  gimi_pb_printer_print_base64();
+  gimi_pb_printer_end();
 }
 
 void loop() {
@@ -61,7 +62,9 @@ void loop() {
           gimi_pb_wifi_manager_restart_wifi_setup();
 
         // Otherwise print the recipt, if one is available.
+        gimi_pb_printer_begin();
         gimi_pb_printer_print_binary();
+        gimi_pb_printer_end();
         gimi_pb_leds_off();
 
         break;

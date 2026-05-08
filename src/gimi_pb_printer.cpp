@@ -15,21 +15,36 @@
 #define RXD2 GIMI_PB_GPIO_22
 #define TXD2 GIMI_PB_GPIO_27
 
+#define PRINTER_POWER_CONTROL GIMI_PB_GPIO_21 // Note that this is also the backlight pin.
+
 HardwareSerial printerSerial(2);
 
 bool globalUpsideDown = true;
 
-void gimi_pb_printer_setup() {
+void gimi_pb_printer_begin() {
 
-// Configure power control pins for printer.
+ // Configure power control pins for printer.
+ digitalWrite(PRINTER_POWER_CONTROL, HIGH);
+ delay(1000);  // Give power supply time to come up.
 
  printerSerial.begin(9600, SERIAL_8N1, RXD2, TXD2); // Printer at standard thermal printer baud rate
  delay(1000);  // Give printer time to initialize
  // Set initial printer alignment to center
  align(1);
  // Print memory status and set initial upside-down state
- printMemoryStats("setup done");
+ printMemoryStats("Printer ready");
  setGlobalUpsideDown(true);  // Default: enable upside-down printing
+ 
+ setDarknessAndDelay(205, 1750);
+}
+
+void gimi_pb_printer_end() {
+
+ // Configure power control pins for printer.
+ digitalWrite(PRINTER_POWER_CONTROL, LOW);
+
+ printerSerial.end();
+ Serial.println("Printer powered down");
 }
 
 void gimi_pb_printer_print_binary() {
