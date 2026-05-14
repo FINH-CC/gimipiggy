@@ -67,7 +67,8 @@ void gimi_pb_printer_print_binary() {
 
 void gimi_pb_printer_print_base64() {
 
-    printBitmapGS_Method(epd_bitmap_gimi_logo, 77, 32); // Hard-coded for internal set-up page printed before WifI connection is established.
+  printBitmapGS_Method(epd_bitmap_gimi_logo, 77, 32); // Hard-coded for internal set-up page printed before WifI connection is established.
+//  printBitmapGS_Method(epd_bitmap_gimi_logo, PIXELS_PER_LINE, get_gimi_logo_size() / PRINTABLE_WIDTH); // Print internal set-up page before WifI connection is established.
 }
 
 // Print bitmap image using standard GS v command - optimized for memory usage

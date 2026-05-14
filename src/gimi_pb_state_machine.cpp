@@ -29,7 +29,15 @@ volatile bool ear_button_pressed = false;
 // In either case, a check should be made if there is anything not-yet-printed in the print buffer,
 // the item printed, the print-buffer item marked as already-printed, and the device return to light-sleep.
 
+void gimi_pb_state_machine_setup(void) {
+
+  ear_button_pressed = false;
+}
+
 void gimi_pb_state_machine_handle_timer(void) {
+
+  // Clear any pending button presses. It should not be possible to 'anticipate' a printable receipt.
+  gimi_pb_state_machine_clear_button_pressed();
 
   // If there's already a receipt ready to print, then don't bother to search for more until the current receipt has been printed.
   if (gimi_pb_get_bin_file_available() == false) {
@@ -43,8 +51,10 @@ void gimi_pb_state_machine_handle_timer(void) {
 
     // If there is a receipt ready print, after the update, then turn on the indicator.
     if (gimi_pb_get_bin_file_available() == true) {
+
 //            gimi_pb_leds_green();
       gimi_pb_leds_colour_pulse(CELEBRATION_EXCITED_COLOUR);
+
     }
 
   } else {
@@ -72,10 +82,25 @@ void gimi_pb_state_machine_handle_button(void) {
     gimi_pb_printer_print_binary();
     gimi_pb_printer_end();
     gimi_pb_leds_off();
-  }
 
-  // If the button is pressed when no new receipt is available, then load an print the Default receipt,
-  // and print it.
+  } else {
+
+    // If no new receipt is available, then fetch and print the Default receipt.
+    gimi_pb_wifi_manager_reconnect();
+
+    if (gimi_pb_wifi_manager_is_connected() == true) {
+
+      if (gimi_pb_bin_file_default_get() == true) {
+
+        gimi_pb_printer_begin();
+        gimi_pb_printer_print_binary();
+        gimi_pb_printer_end();
+        gimi_pb_leds_off();
+      }
+    }
+  
+    gimi_pb_wifi_manager_disconnect();
+}
 
   gimi_pb_state_machine_clear_button_pressed();
 }
@@ -83,12 +108,13 @@ void gimi_pb_state_machine_handle_button(void) {
 void gimi_pb_state_machine_set_button_pressed(void) { 
 
   ear_button_pressed = true;
-  Serial.println("EAR BUTTON INTERRUPT");
+  Serial.println("EAR BUTTON INTERRUPT - button press SET");
 }
 
 void gimi_pb_state_machine_clear_button_pressed(void) {
 
   ear_button_pressed = false;
+  Serial.println("Button press CLEARED");
 }
 
 bool gimi_pb_state_machine_get_button_pressed(void) {

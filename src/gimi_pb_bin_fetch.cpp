@@ -16,7 +16,7 @@ String url_array[GIMI_PB_RECEIPTS_TOTAL];
 uint32_t current_url = 0;
 String current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
-bool new_file_available = false;
+bool new_file_available = false; // True when a receipt, loaded into the print buffer, differs by ETag to the previous download.
 uint8_t* fileBuffer   = nullptr;
 size_t   fileSize     = 0;
 
@@ -26,12 +26,12 @@ void gimi_pb_bin_file_setup(void) {
 
     // Set up URL array;
 
-    url_array[0] = GIMI_PB_RECEIPT_0_URL;
-    url_array[1] = GIMI_PB_RECEIPT_1_URL;
-    url_array[2] = GIMI_PB_RECEIPT_2_URL;
-    url_array[3] = GIMI_PB_RECEIPT_3_URL;
-    url_array[4] = GIMI_PB_RECEIPT_4_URL;
-    url_array[5] = GIMI_PB_RECEIPT_5_URL;
+    url_array[0] = GIMI_PB_RECEIPT_WELCOME_URL;
+    url_array[1] = GIMI_PB_RECEIPT_DEFAULT_URL;
+    url_array[2] = GIMI_PB_RECEIPT_SAVINGS_URL;
+    url_array[3] = GIMI_PB_RECEIPT_CELEBRATION_URL;
+    url_array[4] = GIMI_PB_RECEIPT_REMINDER_URL;
+    url_array[5] = GIMI_PB_RECEIPT_NOTIFICATION_URL;
 
     // Clear the ETag array;
     etag_array[0] = GIMI_PB_RECEIPT_NULL_ETAG;
@@ -61,10 +61,22 @@ void gimi_pb_bin_file_update() {
 
         if (new_file_available) {
 
-            Serial.printf("Receipt available to print\n");            
+            Serial.printf("New receipt available to print\n");            
             return;
         }
     }
+}
+
+// Fetch the default receipt, whether it is new or not.
+bool gimi_pb_bin_file_default_get() {
+
+  bool default_file_available = gimi_pb_bin_fetch_new(1);
+
+  if (default_file_available) 
+    Serial.printf("Default receipt available to print\n");
+
+ return default_file_available;
+  
 }
 
 bool gimi_pb_get_bin_file_available(void) {

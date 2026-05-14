@@ -5,6 +5,8 @@
 #ifndef __GIMI_PB_STATE_MACHINE_H
 #define __GIMI_PB_STATE_MACHINE_H
 
+void gimi_pb_state_machine_setup(void);
+
 void gimi_pb_state_machine_handle_timer(void);
 void gimi_pb_state_machine_handle_button(void);
 
