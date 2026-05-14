@@ -4,15 +4,19 @@
 
 #include <Arduino.h>
 
-#include "gimi_pb_wifi.h"
 #include "gimi_pb_bin_fetch.h"
-#include "gimi_pb_printer.h"
 #include "gimi_pb_buttons.h"
 #include "gimi_pb_leds.h"
-#include "gimi_pb_server.h"
 #include "gimi_pb_pins.h"
+#include "gimi_pb_printer.h"
+#include "gimi_pb_server.h"
+#include "gimi_pb_state_machine.h"
+#include "gimi_pb_wifi.h"
 
-#define gimi_pg_main_button  GIMI_PB_GPIO_35 // This is the main EARS button.
+void ARDUINO_ISR_ATTR ear_button_ISR() {
+
+  gimi_pb_state_machine_set_button_pressed();
+}
 
 void setup() {
 
@@ -20,16 +24,24 @@ void setup() {
 
   Serial.println("GIMI PG STARTING");
 
+  // General set-up.
   gimi_pb_wifi_manager_setup();
   gimi_pb_bin_file_setup();
   gimi_pb_buttons_setup();
   gimi_pb_leds_setup();
 
-  pinMode(gimi_pg_main_button, INPUT_PULLUP); // Must use an external 10K pull-up resistor on ESP32-2432S028.
-  esp_sleep_enable_ext0_wakeup((gpio_num_t)gimi_pg_main_button, 0);
-  esp_sleep_enable_timer_wakeup(SLEEP_TIME_BETWEEN_FETCH);
+  // Timer wake-up set-up.
+  esp_sleep_enable_timer_wakeup(SLEEP_TIME_BETWEEN_FETCH); // Genereates TIMER wake-up reason only if in light-sleep.
 
-  // Print the welcome and set-up instructions. These are stored on the device in flash, as wifi may not yet have been set up.
+  // EARS button wake-up and interrupt (both needed, in case button pressed during binary download, LED effects or Audio effects).
+
+  pinMode(GIMI_PB_GPIO_35, INPUT_PULLUP); // This is the main EARS button. Must use an external 10K pull-up resistor on ESP32-2432S028.
+
+  esp_sleep_enable_ext0_wakeup((gpio_num_t)GIMI_PB_GPIO_35, 0); // Genereates EARS (EXT0) wake-up reason only if in light-sleep.
+  attachInterrupt(GIMI_PB_GPIO_35, ear_button_ISR, FALLING); // Generates EARS button interrupt, if device is running, AND in addition to EXT0 wake-up.
+
+  // Printed after a reset or power-on.
+  // Prints the welcome and set-up instructions. These are stored on the device in flash, as wifi may not yet have been set up.
   gimi_pb_printer_begin();
 //  gimi_pb_printer_print_base64();
   gimi_pb_printer_end();
@@ -55,46 +67,19 @@ void loop() {
 
       case ESP_SLEEP_WAKEUP_EXT0:   
 
-        Serial.println("Wakeup caused by BUTTON"); 
-
-        // If the BOOT button is being held down when the EARS button is pressed, then clear the WiFi settings and reboot.
-        if (gimi_pb_button_0_debounced() == true)
-          gimi_pb_wifi_manager_restart_wifi_setup();
-
-        // Otherwise print the recipt, if one is available.
-        gimi_pb_printer_begin();
-        gimi_pb_printer_print_binary();
-        gimi_pb_printer_end();
-        gimi_pb_leds_off();
-
+        Serial.println("Wakeup caused by BUTTON");
+        gimi_pb_state_machine_handle_button();
         break;
 
       case ESP_SLEEP_WAKEUP_TIMER:  
 
         Serial.println("Wakeup caused by TIMER");
-
-        // If there's already a receipt ready to print, then don't bother to search for more until the current receipt has been printed.
-        if (gimi_pb_get_bin_file_available() == false) {
-
-          gimi_pb_wifi_manager_reconnect();
-
-          if (gimi_pb_wifi_manager_is_connected() == true)
-            gimi_pb_bin_file_update();
-
-          gimi_pb_wifi_manager_disconnect();
-
-          // If there is a receipt ready print, after the update, then turn on the indicator.
-          if (gimi_pb_get_bin_file_available() == true)
-            gimi_pb_leds_green();
-
-        }
-
+        gimi_pb_state_machine_handle_timer();
         break;
 
       default:       
 
         Serial.printf("Wakeup cause spurious: %d\n", wakeup_reason);
-
         break;
     }
   }

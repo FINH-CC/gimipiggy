@@ -2,6 +2,7 @@
 // Copyright 2026.
 //
 
+#include <Arduino.h>
 #include <pgmspace.h>
 
 #include "gimi_pb_base64.h"

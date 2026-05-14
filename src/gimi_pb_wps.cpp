@@ -2,8 +2,9 @@
 // Copyright 2026.
 //
 
-#include <WiFi.h>
+#include <Arduino.h>
 #include <esp_wps.h>
+#include <WiFi.h>
 
 #include "gimi_pb_wps.h"
 #include "gimi_pb_pins.h"

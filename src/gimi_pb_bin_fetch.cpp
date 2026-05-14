@@ -3,8 +3,8 @@
 //
 
 #include <Arduino.h>
-#include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFi.h>
 
 #include "gimi_pb_bin_fetch.h"
 #include "gimi_pb_qr204.h"

@@ -2,14 +2,15 @@
 // Copyright 2026.
 //
 
-#include <WiFi.h>
-#include <WebServer.h>
+#include <Arduino.h>
 #include <DNSServer.h>
 #include <Preferences.h>
+#include <WebServer.h>
+#include <WiFi.h>
 
 #include "gimi_pb_wifi_html.h"
-#include "gimi_pb_wifi.h"
 #include "gimi_pb_html_fetch.h"
+#include "gimi_pb_wifi.h"
 
 // DNS server for captive portal
 DNSServer dnsServer;

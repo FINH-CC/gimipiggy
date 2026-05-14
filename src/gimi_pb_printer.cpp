@@ -3,14 +3,14 @@
 //
 
 #include <Arduino.h>
-#include <HardwareSerial.h>
 #include <esp_heap_caps.h>
+#include <HardwareSerial.h>
 
 #include "gimi_pb_printer.h"
 #include "gimi_pb_base64.h"
 #include "gimi_pb_bin_fetch.h"
-#include "gimi_pb_qr204.h"
 #include "gimi_pb_pins.h"
+#include "gimi_pb_qr204.h"
 
 #define RXD2 GIMI_PB_GPIO_22
 #define TXD2 GIMI_PB_GPIO_27
@@ -22,6 +22,9 @@ HardwareSerial printerSerial(2);
 bool globalUpsideDown = true;
 
 void gimi_pb_printer_begin() {
+
+ pinMode(PRINTER_POWER_CONTROL, OUTPUT);
+ digitalWrite(PRINTER_POWER_CONTROL, LOW);
 
  // Configure power control pins for printer.
  digitalWrite(PRINTER_POWER_CONTROL, HIGH);
@@ -49,19 +52,16 @@ void gimi_pb_printer_end() {
 
 void gimi_pb_printer_print_binary() {
 
-  if (gimi_pb_get_bin_file_available()) {
+  size_t filesize = gimi_pb_get_bin_file_size();
+  size_t fileheight = filesize / (PIXELS_PER_LINE / 8);
 
-    size_t filesize = gimi_pb_get_bin_file_size();
-    size_t fileheight = filesize / (PIXELS_PER_LINE / 8);
+  if(filesize > 0 && filesize % (PIXELS_PER_LINE / 8) == 0) {
 
-    if(filesize > 0 && filesize % (PIXELS_PER_LINE / 8) == 0) {
-
-      Serial.printf("Image dimensions size %d width %d height %d \n", filesize, PIXELS_PER_LINE, fileheight);  
-      printBitmap(gimi_pb_get_bin_file_buffer(), PIXELS_PER_LINE, fileheight);
-    }
-
-    gimi_pb_set_bin_file_printed();
+    Serial.printf("Image dimensions size %d width %d height %d \n", filesize, PIXELS_PER_LINE, fileheight);  
+    printBitmap(gimi_pb_get_bin_file_buffer(), PIXELS_PER_LINE, fileheight);
   }
+
+  gimi_pb_set_bin_file_printed();
 
 }
 

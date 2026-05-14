@@ -17,7 +17,7 @@ size_t gimi_pb_get_bin_file_size(void);
 uint8_t* gimi_pb_get_bin_file_buffer(void);
 void gimi_pb_set_bin_file_printed(void);
 
-// Internal to mofdule. Returns true if a new receipt has been found on the server.
+// Internal to module. Returns true if a new receipt has been found on the server.
 bool gimi_pb_bin_fetch_new(uint32_t url_number);
 
 #endif // __GIMI_PB_BIN_FETCH_H

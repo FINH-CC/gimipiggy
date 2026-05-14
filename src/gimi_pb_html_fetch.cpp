@@ -2,6 +2,7 @@
 // Copyright 2026.
 //
 
+#include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 
