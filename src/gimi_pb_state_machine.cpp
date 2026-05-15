@@ -5,6 +5,7 @@
 #include <Arduino.h>
 
 #include "gimi_pb_state_machine.h"
+#include "gimi_pb_audio.h"
 #include "gimi_pb_bin_fetch.h"
 #include "gimi_pb_buttons.h"
 #include "gimi_pb_leds.h"
@@ -49,16 +50,15 @@ void gimi_pb_state_machine_handle_timer(void) {
 
     gimi_pb_wifi_manager_disconnect();
 
-    // If there is a receipt ready print, after the update, then turn on the indicator.
+    // If there is a new receipt ready print, after the update, anounce it.
     if (gimi_pb_get_bin_file_available() == true) {
 
-//            gimi_pb_leds_green();
-      gimi_pb_leds_colour_pulse(CELEBRATION_EXCITED_COLOUR);
-
+      gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR, SOUND_CELEBRATION);
     }
 
   } else {
-    gimi_pb_leds_colour_pulse(CELEBRATION_EXCITED_COLOUR);
+    // If there is already an existing receipt ready print, anounce it again.
+    gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR, SOUND_CELEBRATION);
   }
 
   // Finally check whether the EARS button has been pressed during this handler.
@@ -103,6 +103,16 @@ void gimi_pb_state_machine_handle_button(void) {
 }
 
   gimi_pb_state_machine_clear_button_pressed();
+}
+
+
+void gimi_pb_state_machine_play_light_and_sound_sequence(uint32_t light, uint32_t sound) {
+
+  gimi_pb_leds_ramp_up(light);
+  gimi_pb_leds_constant(light);
+  gimi_pb_audio_play(sound);
+  gimi_pb_leds_ramp_down(light);
+  gimi_pb_leds_off();
 }
 
 void gimi_pb_state_machine_set_button_pressed(void) { 

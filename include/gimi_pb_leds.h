@@ -5,7 +5,14 @@
 #ifndef __GIMI_PB_LEDS_H
 #define __GIMI_PB_LEDS_H
 
-enum Color { DEFAULT_COLOUR = 0, PAIRING_COLOUR, CELEBRATION_EXCITED_COLOUR, SUCCESS_COLOUR, ERROR_COLOUR, PAPER_OVER_COLOUR};
+enum gimi_pb_colour {
+    DEFAULT_COLOUR = 0,
+    PAIRING_COLOUR,
+    CELEBRATION_EXCITED_COLOUR,
+    SUCCESS_COLOUR,
+    ERROR_COLOUR,
+    PAPER_OVER_COLOUR
+};
 
 #define DEFAULT_COLOUR_VALUE             0x00FFFFFF
 #define PAIRING_COLOUR_VALUE             0x000DEBEB
@@ -28,14 +35,8 @@ void gimi_pb_leds_setup(void);
 
 void gimi_pb_leds_off(void);
 
-void gimi_pb_leds_colour_pulse(uint32_t colour_code);
-
-void gimi_pb_leds_red(void);
-void gimi_pb_leds_green(void);
-void gimi_pb_leds_blue(void);
-void gimi_pb_leds_yellow(void);
-void gimi_pb_leds_magenta(void);
-void gimi_pb_leds_cyan(void);
-void gimi_pb_leds_white(void);
+void gimi_pb_leds_ramp_up(uint32_t colour_code);
+void gimi_pb_leds_constant(uint32_t colour_code);
+void gimi_pb_leds_ramp_down(uint32_t colour_code);
 
 #endif // __GIMI_PB_LEDS_H

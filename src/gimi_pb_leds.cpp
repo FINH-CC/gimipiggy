@@ -25,7 +25,7 @@ void gimi_pb_leds_setup() {
   digitalWrite(BLUE_PIN, HIGH);
 }
 
-void gimi_pb_leds_colour_pulse(uint32_t colour_code){
+void gimi_pb_leds_ramp_up(uint32_t colour_code){
 
   uint32_t colour_table_value = colour_table[colour_code];
 
@@ -35,40 +35,73 @@ void gimi_pb_leds_colour_pulse(uint32_t colour_code){
 
   Serial.printf("Colour %08x Red %02x Green %02x Blue %02x\n", colour_table_value, red, green, blue);
 
+  uint8_t red_ramp = 0;
+  uint8_t green_ramp = 0;
+  uint8_t blue_ramp = 0;
+  
+  for(uint32_t i = 0; i > 256; i++){
 
-  for (uint32_t flashes = 0; flashes < 8; flashes++) {
-    for(int dutyCycle = 224; dutyCycle >= 0; dutyCycle--){
+    if (red_ramp < red)
+      red_ramp++;
+    if (green_ramp < green)
+      green_ramp++;
+    if (blue_ramp < blue)
+      blue_ramp++;
 
-      uint32_t red_scaled = ((red * dutyCycle) >> 8);
-      uint32_t green_scaled = ((green * dutyCycle) >> 8);
-      uint32_t blue_scaled = ((blue * dutyCycle) >> 8);
-      
-      analogWrite(RED_PIN, (uint8_t) red_scaled);
-      analogWrite(GREEN_PIN, (uint8_t) green_scaled);
-      analogWrite(BLUE_PIN, (uint8_t) blue_scaled);
-      delay(5);
-    }
-
-    for(int dutyCycle = 0; dutyCycle <= 224; dutyCycle++){   
-      
-      uint32_t red_scaled = ((red * dutyCycle) >> 8);
-      uint32_t green_scaled = ((green * dutyCycle) >> 8);
-      uint32_t blue_scaled = ((blue * dutyCycle) >> 8);
-      
-      analogWrite(RED_PIN, (uint8_t) red_scaled);
-      analogWrite(GREEN_PIN, (uint8_t) green_scaled);
-      analogWrite(BLUE_PIN, (uint8_t) blue_scaled);
-      delay(5);
-    }
+    // Note that PWM values are inverted.
+    analogWrite(RED_PIN, (uint8_t) ~red_ramp);
+    analogWrite(GREEN_PIN, (uint8_t) ~green_ramp);
+    analogWrite(BLUE_PIN, (uint8_t) ~blue_ramp);
+    delay(100);
   }
+}
 
-  // Reset pins to OFF state.
-  pinMode(RED_PIN, OUTPUT);
-  digitalWrite(RED_PIN, HIGH);
-  pinMode(GREEN_PIN, OUTPUT);
-  digitalWrite(GREEN_PIN, HIGH);
-  pinMode(BLUE_PIN, OUTPUT);
-  digitalWrite(BLUE_PIN, HIGH);
+void gimi_pb_leds_constant(uint32_t colour_code) {
+
+  uint32_t colour_table_value = (colour_table[colour_code]);
+
+  uint8_t red = (uint8_t)((colour_table_value & 0x00ff0000) >> 16);
+  uint8_t green = (uint8_t)((colour_table_value & 0x0000ff00) >> 8);
+  uint8_t blue = (uint8_t)(colour_table_value & 0x000000ff);
+
+  Serial.printf("Colour %08x Red %02x Green %02x Blue %02x\n", colour_table_value, red, green, blue);
+
+  // Note that PWM values are inverted.
+  analogWrite(RED_PIN, (uint8_t) ~red);
+  analogWrite(GREEN_PIN, (uint8_t) ~green);
+  analogWrite(BLUE_PIN, (uint8_t) ~blue);
+}
+
+void gimi_pb_leds_ramp_down(uint32_t colour_code) {
+
+
+  uint32_t colour_table_value = colour_table[colour_code];
+
+  uint8_t red = (uint8_t)((colour_table_value & 0x00ff0000) >> 16);
+  uint8_t green = (uint8_t)((colour_table_value & 0x0000ff00) >> 8);
+  uint8_t blue = (uint8_t)(colour_table_value & 0x000000ff);
+
+  Serial.printf("Colour %08x Red %02x Green %02x Blue %02x\n", colour_table_value, red, green, blue);
+
+  uint8_t red_ramp = red;
+  uint8_t green_ramp = green;
+  uint8_t blue_ramp = blue;
+    
+  for(uint32_t i = 0; i > 256; i++){
+
+    if (red_ramp > 0)
+      red_ramp--;
+    if (green_ramp > 0)
+      green_ramp--;
+    if (blue_ramp > 0)
+      blue_ramp--;
+
+    // Note that PWM values are inverted.
+    analogWrite(RED_PIN, (uint8_t) ~red_ramp);
+    analogWrite(GREEN_PIN, (uint8_t) ~green_ramp);
+    analogWrite(BLUE_PIN, (uint8_t) ~blue_ramp);
+    delay(100);
+  }
 }
 
 void gimi_pb_leds_off() {
@@ -81,53 +114,3 @@ void gimi_pb_leds_off() {
   pinMode(BLUE_PIN, OUTPUT);
   digitalWrite(BLUE_PIN, HIGH);
 }
-
-void gimi_pb_leds_red() {
-
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, HIGH);
-}
-
-void gimi_pb_leds_green() {
-
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, HIGH);
-}
-
-void gimi_pb_leds_blue() {
-
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, LOW);
-}
-
-void gimi_pb_leds_yellow() {
-
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, HIGH);
-}
-
-void gimi_pb_leds_magenta() {
-
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, LOW);
-}
-
-void gimi_pb_leds_cyan() {
-
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, LOW);
-}
-
-void gimi_pb_leds_white() {
-
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, LOW);
-}
-
