@@ -17,6 +17,8 @@ uint32_t current_url = 0;
 String current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
 bool new_file_available = false; // True when a receipt, loaded into the print buffer, differs by ETag to the previous download.
+uint32_t new_file_type = GIMI_PB_RECEIPT_TYPE_WELCOME;
+
 uint8_t* fileBuffer   = nullptr;
 size_t   fileSize     = 0;
 
@@ -45,6 +47,8 @@ void gimi_pb_bin_file_setup(void) {
     current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
     new_file_available = false;
+    new_file_type = GIMI_PB_RECEIPT_TYPE_WELCOME;
+
     fileBuffer   = nullptr;
     fileSize     = 0;
 
@@ -61,7 +65,8 @@ void gimi_pb_bin_file_update() {
 
         if (new_file_available) {
 
-            Serial.printf("New receipt available to print\n");            
+            Serial.printf("New receipt available to print\n");  
+            new_file_type = i;          
             return;
         }
     }
@@ -81,6 +86,10 @@ bool gimi_pb_bin_file_default_get() {
 
 bool gimi_pb_get_bin_file_available(void) {
     return new_file_available;
+}
+
+uint32_t gimi_pb_get_file_type(void) {
+    return new_file_type;
 }
 
 size_t gimi_pb_get_bin_file_size(void) {

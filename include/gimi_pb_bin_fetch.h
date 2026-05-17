@@ -13,6 +13,7 @@ void gimi_pb_bin_file_update(void);
 
 // Button triggered printing support.
 bool gimi_pb_get_bin_file_available(void);
+uint32_t gimi_pb_get_file_type(void);
 size_t gimi_pb_get_bin_file_size(void);
 uint8_t* gimi_pb_get_bin_file_buffer(void);
 void gimi_pb_set_bin_file_printed(void);

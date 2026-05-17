@@ -10,6 +10,7 @@
 #include "gimi_pb_buttons.h"
 #include "gimi_pb_leds.h"
 #include "gimi_pb_printer.h"
+#include "gimi_pb_server.h"
 #include "gimi_pb_wifi.h"
 
 volatile bool ear_button_pressed = false;
@@ -53,12 +54,12 @@ void gimi_pb_state_machine_handle_timer(void) {
     // If there is a new receipt ready print, after the update, anounce it.
     if (gimi_pb_get_bin_file_available() == true) {
 
-      gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR, SOUND_CELEBRATION);
+      gimi_pb_state_machine_play_sequence_by_receipt_type(gimi_pb_get_file_type(), true);
     }
 
   } else {
-    // If there is already an existing receipt ready print, anounce it again.
-    gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR, SOUND_CELEBRATION);
+    // If there is already an existing receipt ready print, anounce it again, but without sound.
+    gimi_pb_state_machine_play_sequence_by_receipt_type(gimi_pb_get_file_type(), false);
   }
 
   // Finally check whether the EARS button has been pressed during this handler.
@@ -78,10 +79,13 @@ void gimi_pb_state_machine_handle_button(void) {
   // Otherwise print the recipt, if one is available.
   if (gimi_pb_get_bin_file_available()) {
 
+//    gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
     gimi_pb_printer_begin();
     gimi_pb_printer_print_binary();
     gimi_pb_printer_end();
     gimi_pb_leds_off();
+//    gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
+//    gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
 
   } else {
 
@@ -92,10 +96,13 @@ void gimi_pb_state_machine_handle_button(void) {
 
       if (gimi_pb_bin_file_default_get() == true) {
 
+//        gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
         gimi_pb_printer_begin();
         gimi_pb_printer_print_binary();
         gimi_pb_printer_end();
         gimi_pb_leds_off();
+//        gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
+//        gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
       }
     }
   
@@ -105,11 +112,81 @@ void gimi_pb_state_machine_handle_button(void) {
   gimi_pb_state_machine_clear_button_pressed();
 }
 
+void gimi_pb_state_machine_play_sequence_by_receipt_type(uint32_t receipt_type, bool with_sound) {
+
+  uint32_t light_colour;
+  uint32_t sound_clip;
+
+  if (receipt_type == GIMI_PB_RECEIPT_TYPE_WELCOME) {
+
+    light_colour = DEFAULT_COLOUR;
+    sound_clip = SOUND_CELEBRATION;
+
+  } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_DEFAULT) {
+
+    light_colour = DEFAULT_COLOUR;
+    sound_clip = SOUND_COIN_CLINK;
+
+  } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_SAVINGS) {
+
+    light_colour = CELEBRATION_EXCITED_COLOUR;
+    sound_clip = SOUND_EXCITED_OINK;
+
+  } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_CELEBRATION) {
+
+    light_colour = CELEBRATION_EXCITED_COLOUR;
+    sound_clip = SOUND_MONEY_ADDED;
+
+  } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_REMINDER) {
+
+    light_colour = CELEBRATION_EXCITED_COLOUR;
+    sound_clip = SOUND_NOTIFICATION_OINK;
+
+  } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_NOTIFICATION) {
+
+    light_colour = CELEBRATION_EXCITED_COLOUR;
+    sound_clip = SOUND_SUCCESS;
+
+  } else {
+    // Unknown receipt type!
+    light_colour = DEFAULT_COLOUR;
+    sound_clip = SOUND_ERROR;
+  }
+
+  if (with_sound == true) {
+    gimi_pb_state_machine_play_light_and_sound_sequence(light_colour, sound_clip);
+  } else {
+    gimi_pb_state_machine_play_light_only_sequence(light_colour);
+  }
+
+}
 
 void gimi_pb_state_machine_play_light_and_sound_sequence(uint32_t light, uint32_t sound) {
 
   gimi_pb_leds_ramp_up(light);
   gimi_pb_leds_constant(light);
+  gimi_pb_audio_play(sound);
+  gimi_pb_leds_ramp_down(light);
+  gimi_pb_leds_off();
+}
+
+void gimi_pb_state_machine_play_light_only_sequence(uint32_t light) {
+
+  gimi_pb_leds_ramp_up(light);
+  gimi_pb_leds_constant(light);
+  gimi_pb_leds_hold();
+  gimi_pb_leds_ramp_down(light);
+  gimi_pb_leds_off();
+}
+
+void gimi_pb_state_machine_printer_pre_sequence(uint32_t light) {
+
+  gimi_pb_leds_ramp_up(light);
+  gimi_pb_leds_constant(light);
+}
+
+void gimi_pb_state_machine_printer_post_sequence(uint32_t light, uint32_t sound) {
+
   gimi_pb_audio_play(sound);
   gimi_pb_leds_ramp_down(light);
   gimi_pb_leds_off();

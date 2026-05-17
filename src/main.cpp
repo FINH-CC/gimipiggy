@@ -33,22 +33,20 @@ void setup() {
   gimi_pb_wifi_manager_setup();
   gimi_pb_audio_setup();
 
-  // Timer wake-up set-up.
-  esp_sleep_enable_timer_wakeup(SLEEP_TIME_BETWEEN_FETCH); // Genereates TIMER wake-up reason only if in light-sleep.
+  // Play the welcome LED and sound.
+  gimi_pb_state_machine_play_light_and_sound_sequence(DEFAULT_COLOUR_VALUE, SOUND_BOOTUP);
 
-  // EARS button wake-up and interrupt (both needed, in case button pressed during binary download, LED effects or Audio effects).
-
+  // Light-sleep wake-up set-up.
   pinMode(GIMI_PB_GPIO_35, INPUT_PULLUP); // This is the main EARS button. Must use an external 10K pull-up resistor on ESP32-2432S028.
-  delay(1000); // There may be some rise-time, so insert a delay before attaching the interrupt.
-
   esp_sleep_enable_ext0_wakeup((gpio_num_t)GIMI_PB_GPIO_35, 0); // Genereates EARS (EXT0) wake-up reason only if in light-sleep.
-  attachInterrupt(GIMI_PB_GPIO_35, ear_button_ISR, FALLING); // Generates EARS button interrupt, if device is running, AND in addition to EXT0 wake-up.
+  esp_sleep_enable_timer_wakeup(SLEEP_TIME_BETWEEN_FETCH); // Genereates TIMER wake-up reason only if in light-sleep.
 
   // Printed after a reset or power-on.
   // Prints the welcome and set-up instructions. These are stored on the device in flash, as wifi may not yet have been set up.
   gimi_pb_printer_begin();
   gimi_pb_printer_print_base64();
   gimi_pb_printer_end();
+
 }
 
 void loop() {
@@ -77,8 +75,10 @@ void loop() {
 
       case ESP_SLEEP_WAKEUP_TIMER:  
 
+        attachInterrupt(GIMI_PB_GPIO_35, ear_button_ISR, FALLING); // Generates EARS button interrupt, but only during timer wake-up.
         Serial.println("Wakeup caused by TIMER");
         gimi_pb_state_machine_handle_timer();
+        detachInterrupt(GIMI_PB_GPIO_35); // EARS interrupt disabled, to avoid clash with EXT0 wake-up.
         break;
 
       default:       
