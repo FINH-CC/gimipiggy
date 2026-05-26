@@ -8,9 +8,9 @@
 #include "gimi_pb_pins.h"
 
 // set pin numbers
-#define RED_PIN GIMI_PB_GPIO_04
-#define GREEN_PIN GIMI_PB_GPIO_16
-#define BLUE_PIN GIMI_PB_GPIO_17
+#define RED_PIN   GIMI_PB_GPIO_19
+#define GREEN_PIN GIMI_PB_GPIO_18
+#define BLUE_PIN  GIMI_PB_GPIO_05
 
 #define RAMP_DELAY 4 // Milliseconds between each dimming step. E.g. 4 ms * 256 steps = ~1 second fade-in or fade-out.
 #define HOLD_DELAY 1000 // Milliseconds delay to use as hold-time in place of playing a sound.

@@ -8,13 +8,13 @@
 #include "gimi_pb_audio.h"
 #include "gimi_pb_pins.h"
 
-#define SD_CS         GIMI_PB_GPIO_05
-#define SD_MOSI       GIMI_PB_GPIO_23
-#define SD_MISO       GIMI_PB_GPIO_19
-#define SD_SCK        GIMI_PB_GPIO_18
-#define I2S_BCLK      GIMI_PB_GPIO_14
-#define I2S_LRC       GIMI_PB_GPIO_25
-#define I2S_DOUT      GIMI_PB_GPIO_26
+#define SD_CS         GIMI_PB_GPIO_26
+#define SD_MOSI       GIMI_PB_GPIO_12
+#define SD_MISO       GIMI_PB_GPIO_14
+#define SD_SCK        GIMI_PB_GPIO_27
+#define I2S_BCLK      GIMI_PB_GPIO_32
+#define I2S_LRC       GIMI_PB_GPIO_33
+#define I2S_DOUT      GIMI_PB_GPIO_25
 
 String gimi_pb_sound_array[GIMI_PB_SOUNDS_TOTAL];
 

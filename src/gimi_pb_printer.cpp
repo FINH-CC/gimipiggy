@@ -13,7 +13,7 @@
 #include "gimi_pb_qr204.h"
 
 #define RXD2 GIMI_PB_GPIO_22
-#define TXD2 GIMI_PB_GPIO_27
+#define TXD2 GIMI_PB_GPIO_23
 
 #define PRINTER_POWER_CONTROL GIMI_PB_GPIO_21 // Note that this is also the backlight pin.
 
