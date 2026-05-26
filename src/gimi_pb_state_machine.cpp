@@ -38,33 +38,46 @@ void gimi_pb_state_machine_setup(void) {
 
 void gimi_pb_state_machine_handle_timer(void) {
 
+  Serial.printf("State Machine handling timer event.\n");
+
   // Clear any pending button presses. It should not be possible to 'anticipate' a printable receipt.
   gimi_pb_state_machine_clear_button_pressed();
 
   // If there's already a receipt ready to print, then don't bother to search for more until the current receipt has been printed.
-  if (gimi_pb_get_bin_file_available() == false) {
+  if (gimi_pb_get_bin_new_file_available() == false) {
+
+    Serial.printf("State Machine - timer - about to look for new file on server.\n");
 
     gimi_pb_wifi_manager_reconnect();
 
-    if (gimi_pb_wifi_manager_is_connected() == true)
-      gimi_pb_bin_file_update();
+    if (gimi_pb_wifi_manager_is_connected() == true) {
+
+      Serial.printf("State Machine - timer - WiFi reconnect successful, and about to update receipts.\n");
+      gimi_pb_bin_file_timer_initiated_update();
+    }
 
     gimi_pb_wifi_manager_disconnect();
 
     // If there is a new receipt ready print, after the update, anounce it.
-    if (gimi_pb_get_bin_file_available() == true) {
+    if (gimi_pb_get_bin_new_file_available() == true) {
 
+      Serial.printf("State Machine - WiFi disconnected, and new receipt type available.\n");
       gimi_pb_state_machine_play_sequence_by_receipt_type(gimi_pb_get_file_type(), true);
     }
 
   } else {
+
+    Serial.printf("State Machine - exisiting unprinted receipt available\n");
     // If there is already an existing receipt ready print, anounce it again, but without sound.
     gimi_pb_state_machine_play_sequence_by_receipt_type(gimi_pb_get_file_type(), false);
   }
 
   // Finally check whether the EARS button has been pressed during this handler.
-  if (gimi_pb_state_machine_get_button_pressed() == true)
+  if (gimi_pb_state_machine_get_button_pressed() == true) {
+
+    Serial.printf("State Machine - button press during timer handler.\n");
     gimi_pb_state_machine_handle_button();
+  }
 }
 
 void gimi_pb_state_machine_handle_button(void) {
@@ -73,41 +86,34 @@ void gimi_pb_state_machine_handle_button(void) {
   // Handle it the same way, then clear the EARS button pressed flag. 
 
   // If the BOOT button is being held down when the EARS button is pressed, then clear the WiFi settings and reboot.
-  if (gimi_pb_button_0_debounced() == true)
+
+  Serial.printf("State Machine - handling button event.\n");
+
+  if (gimi_pb_button_0_debounced() == true) {
+
+    Serial.printf("State Machine - BOOT button press. About to reset WiFi.\n");
     gimi_pb_wifi_manager_restart_wifi_setup();
+  }
 
-  // Otherwise print the recipt, if one is available.
-  if (gimi_pb_get_bin_file_available()) {
+  // Otherwise fetch and print the recipt
+  // If a new receipt is available print that, or if no new receipt is available, then print the Default receipt.
 
-//    gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
-    gimi_pb_printer_begin();
-    gimi_pb_printer_print_binary();
-    gimi_pb_printer_end();
+  gimi_pb_wifi_manager_reconnect();
+
+  if (gimi_pb_wifi_manager_is_connected() == true) {
+
+    Serial.printf("State Machine - button event - WiFi reconnected, about to download and print.\n");
+
+    //gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
+    gimi_pb_bin_file_button_initiated_print();
+    Serial.printf("State Machine - button event - printing completed.\n");
+
     gimi_pb_leds_off();
-//    gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
-//    gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
-
-  } else {
-
-    // If no new receipt is available, then fetch and print the Default receipt.
-    gimi_pb_wifi_manager_reconnect();
-
-    if (gimi_pb_wifi_manager_is_connected() == true) {
-
-      if (gimi_pb_bin_file_default_get() == true) {
-
-//        gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
-        gimi_pb_printer_begin();
-        gimi_pb_printer_print_binary();
-        gimi_pb_printer_end();
-        gimi_pb_leds_off();
-//        gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
-//        gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
-      }
-    }
+    //gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
+    //gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);  
+  }
   
-    gimi_pb_wifi_manager_disconnect();
-}
+  gimi_pb_wifi_manager_disconnect();
 
   gimi_pb_state_machine_clear_button_pressed();
 }

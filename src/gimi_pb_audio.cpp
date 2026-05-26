@@ -6,16 +6,21 @@
 #include <Audio.h>
 
 #include "gimi_pb_audio.h"
+#include "gimi_pb_pins.h"
 
-#define SD_CS          5
-#define SD_MOSI       23
-#define SD_MISO       19
-#define SD_SCK        18
+#define SD_CS         GIMI_PB_GPIO_05
+#define SD_MOSI       GIMI_PB_GPIO_23
+#define SD_MISO       GIMI_PB_GPIO_19
+#define SD_SCK        GIMI_PB_GPIO_18
+#define I2S_BCLK      GIMI_PB_GPIO_14
+#define I2S_LRC       GIMI_PB_GPIO_25
+#define I2S_DOUT      GIMI_PB_GPIO_26
 
 String gimi_pb_sound_array[GIMI_PB_SOUNDS_TOTAL];
 
 
-Audio audio(true, I2S_DAC_CHANNEL_BOTH_EN);
+//Audio audio(true, I2S_DAC_CHANNEL_BOTH_EN); // Use for internal DAC on ESP32-2432S028 CYD, and comment out audio.setPinout().
+Audio audio; // USe for external DAC, such as MAX98357 as used in the AdaFruit BFF.
 
 void gimi_pb_audio_setup() {
 
@@ -42,6 +47,7 @@ void gimi_pb_audio_setup() {
 
   Serial.println("Setting Audio Volume");
 
+  audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT); // Comment out this line if using internal DAC.
   audio.setVolume(21); // 0...21
 }
 

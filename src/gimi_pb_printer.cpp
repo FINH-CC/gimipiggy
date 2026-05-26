@@ -52,13 +52,17 @@ void gimi_pb_printer_end() {
 
 void gimi_pb_printer_print_binary() {
 
+  Serial.printf("Printer - print binary.\n");
+
   size_t filesize = gimi_pb_get_bin_file_size();
   size_t fileheight = filesize / (PIXELS_PER_LINE / 8);
 
+  Serial.printf("Printer - image dimensions size %d width %d height %d \n", filesize, PIXELS_PER_LINE, fileheight);  
+
   if(filesize > 0 && filesize % (PIXELS_PER_LINE / 8) == 0) {
 
-    Serial.printf("Image dimensions size %d width %d height %d \n", filesize, PIXELS_PER_LINE, fileheight);  
-    printBitmap(gimi_pb_get_bin_file_buffer(), PIXELS_PER_LINE, fileheight);
+    Serial.printf("Image dimensions OK to print.\n");  
+    printBitmapGS_Method(gimi_pb_get_bin_file_buffer(), PIXELS_PER_LINE, fileheight);
   }
 
   gimi_pb_set_bin_file_printed();
@@ -68,7 +72,7 @@ void gimi_pb_printer_print_binary() {
 void gimi_pb_printer_print_base64() {
 
   printBitmapGS_Method(epd_bitmap_gimi_logo, 77, 32); // Hard-coded for internal set-up page printed before WifI connection is established.
-//  printBitmapGS_Method(epd_bitmap_gimi_logo, PIXELS_PER_LINE, get_gimi_logo_size() / PRINTABLE_WIDTH); // Print internal set-up page before WifI connection is established.
+  printBitmapGS_Method(epd_bitmap_W384_Type_Test, PIXELS_PER_LINE, get_base64_size() / PRINTABLE_WIDTH); // Print internal set-up page before WifI connection is established.
 }
 
 // Print bitmap image using standard GS v command - optimized for memory usage

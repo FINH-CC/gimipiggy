@@ -7,13 +7,14 @@
 #include <WiFi.h>
 
 #include "gimi_pb_bin_fetch.h"
+#include "gimi_pb_printer.h"
 #include "gimi_pb_qr204.h"
 #include "gimi_pb_server.h"
 
 String etag_array[GIMI_PB_RECEIPTS_TOTAL];
 String url_array[GIMI_PB_RECEIPTS_TOTAL];
 
-uint32_t current_url = 0;
+//uint32_t current_url = 0;
 String current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
 bool new_file_available = false; // True when a receipt, loaded into the print buffer, differs by ETag to the previous download.
@@ -21,8 +22,6 @@ uint32_t new_file_type = GIMI_PB_RECEIPT_TYPE_WELCOME;
 
 uint8_t* fileBuffer   = nullptr;
 size_t   fileSize     = 0;
-
-bool buffer_allocated = false;
 
 void gimi_pb_bin_file_setup(void) {
 
@@ -43,7 +42,6 @@ void gimi_pb_bin_file_setup(void) {
     etag_array[4] = GIMI_PB_RECEIPT_NULL_ETAG;
     etag_array[5] = GIMI_PB_RECEIPT_NULL_ETAG;
 
-    current_url = 0;
     current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
     new_file_available = false;
@@ -51,40 +49,39 @@ void gimi_pb_bin_file_setup(void) {
 
     fileBuffer   = nullptr;
     fileSize     = 0;
-
-    buffer_allocated = false;
 }
 
-// Search through all URL's to see if any new content is available.
-// Stop on first instance of new content.
-void gimi_pb_bin_file_update() {
+void gimi_pb_bin_file_timer_initiated_update() {
+
+    Serial.printf("Binary file update, about to search for new ETag.\n");
 
     for (uint32_t i = 0; i < GIMI_PB_RECEIPTS_TOTAL; i++) {
 
-        new_file_available = gimi_pb_bin_fetch_new(i);
+        new_file_available = gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(i);
 
         if (new_file_available) {
 
-            Serial.printf("New receipt available to print\n");  
+            Serial.printf("New receipt available to print of type %d\n", i);  
             new_file_type = i;          
             return;
         }
     }
 }
 
-// Fetch the default receipt, whether it is new or not.
-bool gimi_pb_bin_file_default_get() {
+void gimi_pb_bin_file_button_initiated_print(void) {
 
-  bool default_file_available = gimi_pb_bin_fetch_new(1);
+    Serial.printf("Binary file print.\n");
 
-  if (default_file_available) 
-    Serial.printf("Default receipt available to print\n");
+    if (new_file_available == true) {
+        Serial.printf("Binary file print - about to fetch and print new receipt.\n");
+        gimi_pb_bin_fetch_and_print_receipt_by_ordinal(new_file_type);
+    } else {
+        Serial.printf("Binary file print - about to fetch and print welcome receipt.\n");
+        gimi_pb_bin_fetch_and_print_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_WELCOME);
+    }
+ }
 
- return default_file_available;
-  
-}
-
-bool gimi_pb_get_bin_file_available(void) {
+bool gimi_pb_get_bin_new_file_available(void) {
     return new_file_available;
 }
 
@@ -108,18 +105,8 @@ void gimi_pb_set_bin_file_printed(void) {
 
 // Downloads Receipt by ordinal, and compares the new ETag with the ETag of the previous downloaded version (if one exists).
 // Returns true if a NEW receipt is found.
-// Heap allocation is persists until this function is called again.
-// Manages own heap allocation.
 
-bool gimi_pb_bin_fetch_new(uint32_t url_number) {
-
-    // If the file buffer has been used on previous calls, free it now.
-    if (buffer_allocated == true) {
-        free(fileBuffer);
-        fileBuffer = nullptr;
-        fileSize   = 0;
-        buffer_allocated = false;
-    }
+bool gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(uint32_t url_number) {
 
     HTTPClient http;
     http.begin(url_array[url_number].c_str());
@@ -127,7 +114,6 @@ bool gimi_pb_bin_fetch_new(uint32_t url_number) {
     // Optional: set timeouts (ms)
     http.setTimeout(10000);
     http.setConnectTimeout(5000);
-
 
     // Define the headers to collect
     const char* headerKeys[] = {"ETag"};
@@ -159,11 +145,55 @@ bool gimi_pb_bin_fetch_new(uint32_t url_number) {
         }
     }
 
+    // Check if the ETag for the newly downloaded file has changed since the previous download.
+    Serial.printf("Previous ETag  %s: \n", etag_array[url_number].c_str());
+
+    if (etag_array[url_number] != current_etag) {
+
+        etag_array[url_number] = current_etag;
+        Serial.printf("New printable content available on URL # %d.\n", url_number);
+
+        return true;
+
+    } else {
+
+        Serial.printf("No new content available.\n");
+        return false;
+    }
+
+    int contentLength = http.getSize();   // -1 if chunked / unknown
+}
+
+// Downloads Receipt by ordinal, and print it.
+// Returns true if printable content downloaded and sent to printer.
+// (no mechanism available to check whther content has actually been successfully printed)
+
+bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
+
+    Serial.printf("Binary file print - about to fetch and print receipt by ordinal.\n");
+
+    fileSize   = 0;
+
+    HTTPClient http;
+    http.begin(url_array[url_number].c_str());
+
+    // Optional: set timeouts (ms)
+    http.setTimeout(10000);
+    http.setConnectTimeout(5000);
+
+    int httpCode = http.GET();
+    if (httpCode != HTTP_CODE_OK) {
+        Serial.printf("[HTTP] GET failed, code: %d\n", httpCode);
+        http.end();
+        return false;
+    }
+
     int contentLength = http.getSize();   // -1 if chunked / unknown
     WiFiClient* stream = http.getStreamPtr();
 
     // ── Path A: known size ──────────────────────────────────────────────
     if (contentLength > 0) {
+        Serial.printf("Binary file print - fetching known size of %d bytes.\n", contentLength);
         fileBuffer = (uint8_t*) malloc(contentLength);
         if (!fileBuffer) {
             Serial.println("malloc failed — not enough heap");
@@ -199,6 +229,7 @@ bool gimi_pb_bin_fetch_new(uint32_t url_number) {
 
     // ── Path B: unknown / chunked size ─────────────────────────────────
     } else {
+        Serial.printf("Binary file print - fetching unknown size.\n");
         // Grow a dynamic buffer in chunks
         const size_t CHUNK = 512;
         size_t allocated = CHUNK;
@@ -240,22 +271,18 @@ bool gimi_pb_bin_fetch_new(uint32_t url_number) {
     Serial.printf("First 4 bytes: %02X %02X %02X %02X\n",
         fileBuffer[0], fileBuffer[1], fileBuffer[2], fileBuffer[3]);
 
-    buffer_allocated = true;
+    Serial.printf("About to print receipt from URL # %d.\n", url_number);
 
-    // Check if the ETag for the newly downloaded file has changed since the previous download.
-    Serial.printf("Previous ETag  %s: \n", etag_array[url_number].c_str());
+    gimi_pb_printer_begin();
+    gimi_pb_printer_print_binary();
+    gimi_pb_printer_end();
 
-    if (etag_array[url_number] != current_etag) {
+    Serial.printf("Printing complete for receipt URL # %d.\n", url_number);
 
-        etag_array[url_number] = current_etag;
-        Serial.printf("New printable content available on URL # %d.\n", url_number);
+    free(fileBuffer);
+    fileBuffer = nullptr;
+    fileSize   = 0;
 
-        return true;
-
-    } else {
-
-        Serial.printf("No new content available.\n");
-        return false;
-    }
-
+    return true;
 }
+
