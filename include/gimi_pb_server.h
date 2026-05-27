@@ -25,12 +25,12 @@ enum gimi_pb_receipt_type {
 // Uncomment ONLY ONE block of URL's below, to select which server (and/or which user profile that you want THIS device to use).
 
 // pig_001 Real live FINH server.
-/*#define GIMI_PB_RECEIPT_WELCOME_URL      "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/welcome.bin"
+#define GIMI_PB_RECEIPT_WELCOME_URL      "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/welcome.bin"
 #define GIMI_PB_RECEIPT_DEFAULT_URL      "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/default.bin"
 #define GIMI_PB_RECEIPT_SAVINGS_URL      "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/savings.bin"
 #define GIMI_PB_RECEIPT_CELEBRATION_URL  "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/celebration.bin"
 #define GIMI_PB_RECEIPT_REMINDER_URL     "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/reminder.bin"
-#define GIMI_PB_RECEIPT_NOTIFICATION_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/notification.bin"*/
+#define GIMI_PB_RECEIPT_NOTIFICATION_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_001/notification.bin"
 
 // pig_002 Real live FINH server.
 /*#define GIMI_PB_RECEIPT_WELCOME_URL      "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_002/welcome.bin"
@@ -49,13 +49,12 @@ enum gimi_pb_receipt_type {
 #define GIMI_PB_RECEIPT_NOTIFICATION_URL "https://pudixovgv7mqdvud.public.blob.vercel-storage.com/pig_003/notification.bin"*/
 
 // Dom's Github testbed.
-#define GIMI_PB_RECEIPT_WELCOME_URL      "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
+/*#define GIMI_PB_RECEIPT_WELCOME_URL      "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
 #define GIMI_PB_RECEIPT_DEFAULT_URL      "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
 #define GIMI_PB_RECEIPT_SAVINGS_URL      "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
 #define GIMI_PB_RECEIPT_CELEBRATION_URL  "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
 #define GIMI_PB_RECEIPT_REMINDER_URL     "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
-#define GIMI_PB_RECEIPT_NOTIFICATION_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"
+#define GIMI_PB_RECEIPT_NOTIFICATION_URL "https://raw.githubusercontent.com/dostr/dostr.github.io/master/w384_type_test_384_1047.bin"*/
 
 #endif // __GIMI_PB_SERVER_H
-
 

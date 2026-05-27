@@ -194,7 +194,7 @@ bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
     // ── Path A: known size ──────────────────────────────────────────────
     if (contentLength > 0) {
         Serial.printf("Binary file print - fetching known size of %d bytes.\n", contentLength);
-        fileBuffer = (uint8_t*) malloc(contentLength);
+        fileBuffer = (uint8_t*) heap_caps_malloc(contentLength, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(contentLength);
         if (!fileBuffer) {
             Serial.println("malloc failed — not enough heap");
             http.end();
@@ -233,7 +233,7 @@ bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
         // Grow a dynamic buffer in chunks
         const size_t CHUNK = 512;
         size_t allocated = CHUNK;
-        fileBuffer = (uint8_t*) malloc(allocated);
+        fileBuffer = (uint8_t*) heap_caps_malloc(allocated, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(allocated);
         if (!fileBuffer) { http.end(); return false; }
 
         fileSize = 0;
@@ -247,7 +247,7 @@ bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
                 // Grow buffer if needed
                 if (fileSize + n > allocated) {
                     allocated += max(n, CHUNK);
-                    uint8_t* resized = (uint8_t*) realloc(fileBuffer, allocated);
+                    uint8_t* resized = (uint8_t*) heap_caps_realloc(fileBuffer, allocated, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than realloc(fileBuffer, allocated);
                     if (!resized) {
                         free(fileBuffer); fileBuffer = nullptr;
                         http.end(); return false;
