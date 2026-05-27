@@ -127,7 +127,7 @@ void printBitmapGS_Method(const unsigned char* progmemData, int width, int heigh
    // Copy from PROGMEM to RAM, then rotate 180°
    int bytesPerLine = (width + 7) / 8;
    int totalBytes = bytesPerLine * height;
-   uint8_t* ramCopy = (uint8_t*)malloc(totalBytes);
+   uint8_t* ramCopy = (uint8_t*)heap_caps_malloc(totalBytes, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than (uint8_t*)malloc(totalBytes);
    if (ramCopy) {
      // Copy image data from PROGMEM to RAM for rotation
      for (int i = 0; i < totalBytes; ++i)
