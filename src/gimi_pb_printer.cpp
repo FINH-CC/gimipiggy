@@ -11,15 +11,22 @@
 #include "gimi_pb_bin_fetch.h"
 #include "gimi_pb_pins.h"
 #include "gimi_pb_qr204.h"
+#include "gimi_pb_server.h"
 
-#define RXD2 GIMI_PB_GPIO_22
-#define TXD2 GIMI_PB_GPIO_23
+#define PRINTER_POWER_CONTROL                         GIMI_PB_GPIO_21 // Note that this is also the backlight pin.
 
-#define PRINTER_POWER_CONTROL GIMI_PB_GPIO_21 // Note that this is also the backlight pin.
+#define QR_204_THERMAL_PRINTER_RXD2                   GIMI_PB_GPIO_22
+#define QR_204_THERMAL_PRINTER_TXD2                   GIMI_PB_GPIO_23
+#define QR_204_THERMAL_PRINTER_BAUD_RATE              9600
+#define QR_204_THERMAL_PRINTER_BITS                   SERIAL_8N1
+#define QR_204_THERMAL_PRINTER_DELAY_US_BYTE_TRANSMIT 1042 // Time for 1 byte to be sent to printer at 9600 Baud 8N1.
 
 HardwareSerial printerSerial(2);
 
 bool globalUpsideDown = true;
+
+uint8_t* ramCopy   = nullptr;
+uint8_t* dst   = nullptr;
 
 void gimi_pb_printer_begin() {
 
@@ -30,7 +37,7 @@ void gimi_pb_printer_begin() {
  digitalWrite(PRINTER_POWER_CONTROL, HIGH);
  delay(1000);  // Give power supply time to come up.
 
- printerSerial.begin(9600, SERIAL_8N1, RXD2, TXD2); // Printer at standard thermal printer baud rate
+ printerSerial.begin(QR_204_THERMAL_PRINTER_BAUD_RATE, QR_204_THERMAL_PRINTER_BITS, QR_204_THERMAL_PRINTER_RXD2, QR_204_THERMAL_PRINTER_TXD2); // Printer at standard thermal printer baud rate
  delay(1000);  // Give printer time to initialize
  // Set initial printer alignment to center
  align(1);
@@ -39,6 +46,11 @@ void gimi_pb_printer_begin() {
  setGlobalUpsideDown(true);  // Default: enable upside-down printing
  
  setDarknessAndDelay(205, 1750);
+
+ Serial.printf("gimi_pb_printer_begin() ONE-TIME MALLOC OF %d bytes for ramCopy.\n", MAX_RECEIPT_BUFFER_SIZE);
+ ramCopy = (uint8_t*) heap_caps_malloc(MAX_RECEIPT_BUFFER_SIZE, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(contentLength);
+ Serial.printf("gimi_pb_printer_begin() ONE-TIME MALLOC OF %d bytes for dst.\n", MAX_RECEIPT_BUFFER_SIZE);
+ dst = (uint8_t*) heap_caps_malloc(MAX_RECEIPT_BUFFER_SIZE, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(contentLength);
 }
 
 void gimi_pb_printer_end() {
@@ -62,6 +74,10 @@ void gimi_pb_printer_print_binary() {
   if(filesize > 0 && filesize % (PIXELS_PER_LINE / 8) == 0) {
 
     Serial.printf("Image dimensions OK to print.\n");  
+
+    Serial.printf("IMMEDIATELY BEFORE PRINT Free heap: %d, Min free heap: %d\n", ESP.getFreeHeap(), ESP.getMinFreeHeap());
+    Serial.printf("IMMEDIATELY BEFORE PRINT Free stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
+
     printBitmapGS_Method(gimi_pb_get_bin_file_buffer(), PIXELS_PER_LINE, fileheight);
   }
 
@@ -71,8 +87,7 @@ void gimi_pb_printer_print_binary() {
 
 void gimi_pb_printer_print_base64() {
 
-  printBitmapGS_Method(epd_bitmap_gimi_logo, 77, 32); // Hard-coded for internal set-up page printed before WifI connection is established.
-  printBitmapGS_Method(epd_bitmap_W384_Type_Test, PIXELS_PER_LINE, get_base64_size() / PRINTABLE_WIDTH); // Print internal set-up page before WifI connection is established.
+  printBitmapGS_Method(gimi_pb_weclome_bitmap, PIXELS_PER_LINE, get_base64_welcome_size() / PRINTABLE_WIDTH); // Print internal set-up page before WifI connection is established.
 }
 
 // Print bitmap image using standard GS v command - optimized for memory usage
@@ -127,24 +142,20 @@ void printBitmapGS_Method(const unsigned char* progmemData, int width, int heigh
    // Copy from PROGMEM to RAM, then rotate 180°
    int bytesPerLine = (width + 7) / 8;
    int totalBytes = bytesPerLine * height;
-   uint8_t* ramCopy = (uint8_t*)heap_caps_malloc(totalBytes, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than (uint8_t*)malloc(totalBytes);
-   if (ramCopy) {
-     // Copy image data from PROGMEM to RAM for rotation
-     for (int i = 0; i < totalBytes; ++i)
-       ramCopy[i] = pgm_read_byte(progmemData + i);
-     // Rotate the image 180 degrees
-     rotated = rotateBitmap1bpp_180(ramCopy, width, height);
-     free(ramCopy);
-     if (rotated) {
-       dataToPrint = rotated;
-     }
+
+    // Copy image data from PROGMEM to RAM for rotation
+   for (int i = 0; i < totalBytes; ++i)
+     ramCopy[i] = pgm_read_byte(progmemData + i);
+   // Rotate the image 180 degrees
+   rotated = rotateBitmap1bpp_180(ramCopy, width, height);
+   if (rotated) {
+     dataToPrint = rotated;
    }
  }
 
  // Validate image dimensions
  if (w <= 0 || h <= 0) {
    Serial.println("Invalid image size");
-   if (rotated) free(rotated);
    return;
  }
  int bytesPerLine = (w + 7) / 8;
@@ -175,9 +186,9 @@ void printBitmapGS_Method(const unsigned char* progmemData, int width, int heigh
      int baseIndex = (chunk * 24 + row) * bytesPerLine;
      for (int col = 0; col < bytesPerLine; col++) {
        printerSerial.write(dataToPrint[baseIndex + col]);
+       delayMicroseconds(QR_204_THERMAL_PRINTER_DELAY_US_BYTE_TRANSMIT); // Time for 1 byte to be sent to printer at 9600 Baud 8N1.
      }
    }
-   delay(30);  // Allow printer to process chunk
  }
 
  // Feed paper and restore normal settings
@@ -190,8 +201,6 @@ void printBitmapGS_Method(const unsigned char* progmemData, int width, int heigh
  printerSerial.write(0x23);  // #
  printerSerial.write(0x58);  // Normal darkness
  delay(50);
- // Clean up rotated image memory if allocated
- if (rotated) free(rotated);
 }
 
 // Alternative bitmap printing method using DC2 * command
@@ -230,14 +239,15 @@ void printBitmapDC2_Method(const unsigned char* progmemData, int width, int heig
 }
 
 // Helper function: Rotate a 1bpp bitmap by 180 degrees
-// Returns a newly allocated buffer that caller must free()
+// Uses a pre-allocated perssistant buffer
 // Used for upside-down printing when globalUpsideDown is enabled
 uint8_t* rotateBitmap1bpp_180(const uint8_t* src, int width, int height) {
  int bytesPerLine = (width + 7) / 8;
  int totalBytes = bytesPerLine * height;
- // Allocate destination buffer and clear it
- uint8_t* dst = (uint8_t*)calloc(totalBytes, 1);
- if (!dst) return nullptr;
+
+ // Clear destination buffer
+ memset(dst, 0, MAX_RECEIPT_BUFFER_SIZE);
+
  // Rotate each pixel by 180 degrees
  for (int y = 0; y < height; ++y) {
    for (int x = 0; x < width; ++x) {
@@ -538,7 +548,8 @@ void printTestPattern(int width, int height, int pattern) {
  int bytesPerLine = (width + 7) / 8;
  int totalBytes = bytesPerLine * height;
  // Allocate memory for image data
- uint8_t* imageData = (uint8_t*)malloc(totalBytes);
+// uint8_t* imageData = (uint8_t*)malloc(totalBytes);
+ uint8_t* imageData =  (uint8_t*)heap_caps_malloc(totalBytes, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than (uint8_t*)malloc(totalBytes);
  if (imageData == NULL) {
    Serial.println("Failed to allocate memory for image");
    printMemoryStats("alloc fail");

@@ -48,6 +48,8 @@ void gimi_pb_bin_file_setup(void) {
     new_file_type = GIMI_PB_RECEIPT_TYPE_WELCOME;
 
     fileBuffer   = nullptr;
+    Serial.printf("gimi_pb_bin_file_setup() ONE-TIME MALLOC OF %d bytes.\n", MAX_RECEIPT_BUFFER_SIZE);
+    fileBuffer = (uint8_t*) heap_caps_malloc(MAX_RECEIPT_BUFFER_SIZE, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(contentLength);
     fileSize     = 0;
 }
 
@@ -77,7 +79,7 @@ void gimi_pb_bin_file_button_initiated_print(void) {
         gimi_pb_bin_fetch_and_print_receipt_by_ordinal(new_file_type);
     } else {
         Serial.printf("Binary file print - about to fetch and print welcome receipt.\n");
-        gimi_pb_bin_fetch_and_print_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_WELCOME);
+        gimi_pb_bin_fetch_and_print_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_DEFAULT);
     }
  }
 
@@ -166,9 +168,9 @@ bool gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(uint32_t url_number) {
 
 // Downloads Receipt by ordinal, and print it.
 // Returns true if printable content downloaded and sent to printer.
-// (no mechanism available to check whther content has actually been successfully printed)
+// (no mechanism available to check whether content has actually been successfully printed)
 
-bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
+bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal_uses_malloc(uint32_t url_number) {
 
     Serial.printf("Binary file print - about to fetch and print receipt by ordinal.\n");
 
@@ -282,6 +284,87 @@ bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
     free(fileBuffer);
     fileBuffer = nullptr;
     fileSize   = 0;
+
+    return true;
+}
+
+// Downloads Receipt by ordinal, and print it.
+// Returns true if printable content downloaded and sent to printer.
+// (no mechanism available to check whether content has actually been successfully printed)
+
+bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
+
+    Serial.printf("Binary file print - about to fetch and print receipt by ordinal.\n");
+
+    memset(fileBuffer, 0, MAX_RECEIPT_BUFFER_SIZE);
+    fileSize   = 0;
+
+    HTTPClient http;
+    http.begin(url_array[url_number].c_str());
+
+    // Optional: set timeouts (ms)
+    http.setTimeout(10000);
+    http.setConnectTimeout(5000);
+
+    int httpCode = http.GET();
+    if (httpCode != HTTP_CODE_OK) {
+        Serial.printf("[HTTP] GET failed, code: %d\n", httpCode);
+        http.end();
+        return false;
+    }
+
+    int contentLength = http.getSize();   // -1 if chunked / unknown
+
+    if (contentLength > MAX_RECEIPT_BUFFER_SIZE) {
+        Serial.printf("PRINTING FAILED: Maximum print file size is: %d This file is: %d\n", MAX_RECEIPT_BUFFER_SIZE, contentLength);
+        return false;
+    }
+
+    WiFiClient* stream = http.getStreamPtr();
+
+    // ── Path A: known size ──────────────────────────────────────────────
+    if (contentLength > 0) {
+        Serial.printf("Binary file print - fetching known size of %d bytes.\n", contentLength);
+
+        size_t bytesRead = 0;
+        uint32_t timeout = millis();
+
+        while (http.connected() && bytesRead < (size_t)contentLength) {
+            size_t available = stream->available();
+            if (available) {
+                size_t chunk = stream->readBytes(
+                    fileBuffer + bytesRead,
+                    min(available, (size_t)(contentLength - bytesRead))
+                );
+                bytesRead += chunk;
+                timeout = millis();  // reset watchdog on progress
+            }
+            if (millis() - timeout > 5000) {
+                Serial.println("Stream timeout");
+                http.end();
+                return false;
+            }
+            yield();  // feed the ESP32 watchdog
+        }
+
+        fileSize = bytesRead;
+        Serial.printf("Downloaded %u bytes\n", fileSize);
+
+    }
+
+    http.end();
+
+    // fileBuffer now holds the raw bytes — do whatever you need:
+    Serial.printf("First 4 bytes: %02X %02X %02X %02X\n",
+        fileBuffer[0], fileBuffer[1], fileBuffer[2], fileBuffer[3]);
+
+    Serial.printf("About to print receipt from URL # %d.\n", url_number);
+
+    gimi_pb_printer_begin();
+    gimi_pb_printer_print_binary();
+    gimi_pb_printer_end();
+
+    Serial.printf("Printing complete for receipt URL # %d.\n", url_number);
 
     return true;
 }

@@ -23,6 +23,7 @@ void gimi_pb_set_bin_file_printed(void);
 
 // Internal to module.
 bool gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(uint32_t url_number);
+bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal_uses_malloc(uint32_t url_number);
 bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number);
 
 #endif // __GIMI_PB_BIN_FETCH_H
