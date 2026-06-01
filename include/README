@@ -1,37 +1,203 @@
+INTRODUCTION
 
-This directory is intended for project header files.
+Source code and corresponding prototype electronics hardware developed by THINK RADIO LIMITED, under contract to FINH LIMITED, for their client GIMI AB.
 
-A header file is a file containing C declarations and macro definitions
-to be shared between several project source files. You request the use of a
-header file in your project source file (C, C++, etc) located in `src` folder
-by including it, with the C preprocessing directive `#include'.
+This source code, firmware and electronics hardware forms part of a product prototype consisting at its core of a user-configurable wifi connection,
+thermal printer, user interaction buttons, audio output, RGB LED output, SD card reader, and rechargeable lithium-battery based power supply.
 
-```src/main.c
+This application searches for pre-prepared thermal printer receipts on a designated internet server, then indicates by means of audio and LEDs that a new receipt is available,
+and prints the receipt on the press of a user-button.
 
-#include "header.h"
+Everything is supplied on an 'as-is' basis, for the evaluation of a prototype product and no warranty is given.
 
-int main (void)
-{
- ...
-}
-```
+BUILDING FROM SOURCE
 
-Including a header file produces the same results as copying the header file
-into each source file that needs it. Such copying would be time-consuming
-and error-prone. With a header file, the related declarations appear
-in only one place. If they need to be changed, they can be changed in one
-place, and programs that include the header file will automatically use the
-new version when next recompiled. The header file eliminates the labor of
-finding and changing all the copies as well as the risk that a failure to
-find one copy will result in inconsistencies within a program.
+This codebase has been set up for Platformio (on VS Code), but could be adapted to the Arduino IDE,
+by renaming main.cpp to gim_pb.ino, creating a folder of that same name, and ensuring all *.cpp and *.h files reside in that folder,
+and loading appropriate Arduino libraries, as necessary.
 
-In C, the convention is to give header files names that end with `.h'.
+For instructions on setting up Platformio and VSCode see https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/
 
-Read more about using header files in official GCC documentation:
+VIEWING DEBUG TRACING
 
-* Include Syntax
-* Include Operation
-* Once-Only Headers
-* Computed Includes
+Debug tracing should work on either Platformio or Arduino IDE.
 
-https://gcc.gnu.org/onlinedocs/cpp/Header-Files.html
+HOW IT WORKS
+
+The ESP32 is either running, or in light-sleep.
+
+There are 2 event sources, the timer, or the 'ears' button (actually 2 buttons, wired in parallel).
+
+Timer events are assumed to be much more frequent than button events.
+
+Timer events only occur during light-sleep, and after a sleep of duration SLEEP_TIME_BETWEEN_FETCH.
+On timer wake-up, a check is made whether any new Receipt has already been found on the server, on a previous timer event.
+
+If no new Receipt has already been found, then a check is made on the server for any new Receipt.
+If nothing new is found on the server, then this device returns silently to sleep.
+If a new Receipt is found, then the appropriate LED's and sound sequence is played.
+
+If a new Receipt has been found on a previous timer event, then only the appropriate LED colour is played (without the sound).
+
+Button events may occur either when the device is in light-sleep, or whilst running through a timer event - but not through an already-running button event.
+On a button event, either the new Receipt type found by an earlier timer event is downloaded and printed, or the deafult type is downloaded and printed.
+This is always a fresh download at the time of printing, to avoid stale/out-of-date Receipts.
+After the item is printed, the appropriate LED and sound sequence is played, and the device returns to light-sleep.
+
+LIMITATIONS
+
+This prototype is based on off-the-shelf hardware, that is not suitable for power-management.
+In particular the printer will continue to consume significant power, even when the device is idle.
+There is provision for an internal power-isolation switch, which should be used between product demonstrations.
+
+There is no implementation of Open-Banking and it is envisaged that, due to the limitations of the ESP32,this would almost entirely be handled by Gimi's
+iPhone/Android banking app.
+
+HARDWARE
+
+Hardware design starts out from an objective of a low-cost consumer product.
+
+Core components:
+1. Espressif ESP32 DevKitC WROVER                                 https://www.espressif.com/en/products/devkits/esp32-devkitc
+2. QR-204 type thermal printer (with original enclosure removed). https://www.amazon.co.uk/YIWEOG-Embedded-Receipt-Interface-Printing/dp/B0DQT3PVHW
+3. AdaFruit BFF combined audio DAC (MAX98357) and SD card holder. https://www.adafruit.com/product/5769
+4. AdaFruit micro-speaker.                                        https://www.adafruit.com/product/3923
+5. CREE X-ML Color RGBW LED on small aluminium PCB                https://www.cree-led.com/products/leds/xlamp/xm/
+6. LX-2BUPS 9V high-current UPS and 2x 18650 Batteries            https://www.amazon.co.uk/dp/B0BQXMY42X
+7. 2 micro-switches wired in pararllel.                           https://www.amazon.co.uk/dp/B07SPX492J
+8. ESP32 Terminal Adapter                                         https://www.amazon.co.uk/dp/B0BCWBW4SR
+
+1. This is a high quality development board, a production version would most likely use the Espressif ESP32-WROVER-E contained within teh development board.
+
+2. QR-204 thermal printers appear to be a generic product available from muliple vebdors.
+Whilst at very low volumes through Western suppliers the unit price is high, the volume discounts through sources such as AliBaba are very much more competitive.
+Careful attention should be paid to the quality supplied.
+Also signicant differences in print-qulity result from different paper-types - glossy paper producing the best grahpics-printing results.
+
+3. This a convenient part for prototyping. In production the MAX98357 chip would be used, and either any generic CF card-holder and card (c.£1 at volume),
+or it may be possible (if suitably sized) for audio clips to be stored inside the QSPI flash of the Espressif ESP32-WROVER-E.
+
+4. Any similar micro-speaker of similar charceteristics will do.
+
+5. This is an expensive high-power part, many cheaper alternatives exist. Note that a 5V power rail may be necessary.
+
+6. Note that the power requirements of the QR-204 printer place significant demands on a battery-based. power supply.
+Although rated at 5-9V, printing quality is both poor and slow below 7.5V, and a full 9V further improves performance.
+The printer may draw up to 2A at switch-on, idles at about 25mA, and ramps to around 250mA during printing.
+
+At a minimum, the battery/batteries should have a 1C rating/capacity in excess of 4000mAh, to accomodate a voltage booster.
+
+7. Or any similar generic microswitches to suit the enclosure design.
+
+8. In production this would be replaced with a custom power supply delivering 9V/5V/3.3V, and carrying the various other modules and chips.
+
+
+Prototype wiring diagrams:
+
+(See gimi_pb_pins.h for defintions of logical connections)
+
+
+ESP32 Terminal Adapter (Top view, USB Connector orientated towards bottom)
+
+NOTE: 10K Pull-up Resistor between 3V3 and P35/GPIO_35 - mounted on Terminal Adapter
+
+                                ******************
+                 SYSTEM_3V3 --- * 3V3        GND * --- SYSTEM_GND
+                                * EN         P23 * --- QR_204_RX
+                                * SVP        P22 * --- QR_204_TX
+                                * SVN         TX *
+                                * P34         RX *
+               U_SWITCH_COM --- * P35        P21 *
+              ADAFRUIT_BCLK --- * P32        GND * --- SYSTEM_GND
+                ADAFRUIT_LR --- * P33        P19 * --- CREE_RED_NEG
+               ADAFRUIT_DAT --- * P25        P18 * --- CREE_GREEN_NEG
+               ADAFRUIT_SEL --- * P26         P5 * --- CREE_BLUE_NEG
+               ADAFRUIT_SCK --- * P27        P17 *
+                ADAFRUIT_MI --- * P14        P16 *
+                ADAFRUIT_MO --- * P12         P4 *
+                 SYSTEM_GND --- * GND         P0 *
+                                * P13         P2 *
+                                * SD2        P15 *
+                                * SD3        SD1 *
+                                * CND        SD0 *
+                 SYSTEM_9V0 --- * 5V         CLK *
+                                ******************
+
+ADAFRUIT BFF (Top View/Component-side)
+
+                                ******************
+                 SYSTEM_3V3 --- * 5V         SEL * --- ESP32_P26
+                 SYSTEM_GND --- * GND        DAT * --- ESP32_P25
+                 SYSTEM_3V3 --- * 3V3         LR * --- ESP32_P33
+                  ESP32_P12 --- * MO        BCLK * --- ESP32_P32
+                  ESP32_P14 --- * MI             *
+                  ESP32_P27 --- * SCK            *
+                                *                *
+                                ******************
+
+QR_204 Thermal Printer (Top View/Component-side)
+
+                                ******************
+                 SYSTEM_GND --- * GND            *
+                                * RTS            *
+                  ESP32_P23 --- * RX             *
+                  ESP32_P22 --- * TX             *
+                                * NC             *
+                                ******************
+
+                                ******************
+                 SYSTEM_GND --- * GND            *
+                 SYSTEM_9V0 --- * 5-9V           *
+                 SYSTEM_9V0 --- * 12V            *
+                                ******************
+
+CREE X-ML RGBW LED (Top View/Component-side)
+
+                                ******************
+                  ESP32_P19 --- * R-          R+ * --- 100R Resistor --- SYSTEM_3V3
+                  ESP32_P18 --- * G-          G+ * --- 100R Resistor --- SYSTEM_3V3
+                  ESP32_P05 --- * B-          B+ * --- 100R Resistor --- SYSTEM_3V3
+                                * W-          W+ *
+                                ******************
+
+U_SWITCH Micro-switches (2 of)
+
+                                ******************
+                  ESP32_P35 --- * COM            * 
+                 SYSTEM_GND --- * N-O            *
+                                ******************
+
+PUSH_SWITCH (Power)
+
+                                ******************
+                   PSU_UPS+ --- * RED_IN RED_OUT * --- SYSTEM_9V0
+                   PSU_UPS- --- * BLK_IN BLK_OUT * --- SYSTEM_GND
+                                ******************
+
+PSU LX-2BUPS (Top View/Component-side)
+
+NOTE: External USB Charging should connect ONLY TO HERE.
+
+                                ******************
+         PUSH_SWITCH_RED_IN --- * UPS+      UPS- * --- PUSH_SWITCH_BLACK_IN
+                                ******************
+
+
+
+Proposed production hardware (with estimated costs based on 2500 quantity):
+
+1. £2.85 - ESP32-WROVER-E-N8R8 Module     https://www.digikey.co.uk/en/products/detail/espressif-systems/ESP32-WROVER-E-N8R8/11613126
+2. £7.44 - QR-204 Thermal printer         https://www.alibaba.com/product-detail/58mm-QR-204-Kiosk-Embedded-Thermal_1600891328457.html
+3. £1.49 - MAX98357 Audio Chip            https://www.digikey.co.uk/en/products/detail/analog-devices-inc-maxim-integrated/MAX98357AETE-T/4936122
+4. £0.30 - Micro Speaker                  https://www.alibaba.com/product-detail/Best-Selling-8ohm-1-0W-900HZ_1601224274783.html
+5. £0.26 - RGB LED                        https://www.digikey.co.uk/en/products/detail/cree-led/CLY6D-FKC-CK1N1D1BB7D3D3/5321303
+6. £4.00 - Custom PSU & 18650 (Estimated)
+7. £0.08 - Micro Switch SS-5GL            https://www.alibaba.com/product-detail/New-Original-OMROM-SS-5GL-3PIN_1601789370776.html
+8. £1.00 - PCB and PCBA (Estimated)
+
+(6. Custom PSU estimate is based on 50% of the price of a single off-the-shelf PSU)
+(8. Most PCB Assembly includes free Resistors and Capacitors)
+
+Considerable further savings may be available by buying directly from suppliers in China, rather than DigiKey, e.g. ESP32-WROVER-E-N8R8 Module is quoted at £0.38 on AliBaba.
+
+Estimated Total Cost, all parts (except enclosure), based on > 2500 Quantity, using DigiKey for all critical parts (except printer) = £17.50

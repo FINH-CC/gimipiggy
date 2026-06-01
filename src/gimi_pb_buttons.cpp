@@ -22,9 +22,9 @@ void gimi_pb_button_0() {
   buttonState = digitalRead(buttonPin);
 
   if (buttonState == LOW) {
-      Serial.println("BOOT BUTTON DOWN!!!");
+    Serial.println("BOOT BUTTON DOWN!!!");
   } else {
-      Serial.println("BOOT BUTTON UP");
+    Serial.println("BOOT BUTTON UP");
   }
 }
 

@@ -54,12 +54,13 @@ void gimi_pb_audio_setup() {
 void gimi_pb_audio_play(uint32_t sound_id)
 {
 
-    Serial.printf("About to play audio %s\n", gimi_pb_sound_array[sound_id].c_str());
+  Serial.printf("About to play audio %s\n", gimi_pb_sound_array[sound_id].c_str());
 
-    audio.connecttoFS(SD, gimi_pb_sound_array[sound_id].c_str());
+  audio.connecttoFS(SD, gimi_pb_sound_array[sound_id].c_str());
 
-    while (audio.isRunning())
-      audio.loop();
+  while (audio.isRunning()) {
+    audio.loop();
+  }
 
 }
 

@@ -29,8 +29,8 @@
 
 #define GIMI_PB_GPIO_20 20
 #define GIMI_PB_GPIO_21 21 // Backlight. Also used for Printer power-enable.
-#define GIMI_PB_GPIO_22 22 // Printer Rx.
-#define GIMI_PB_GPIO_23 23 // Printer Tx.
+#define GIMI_PB_GPIO_22 22 // Rx from Printer (Connects to pin marked as Tx on printer).
+#define GIMI_PB_GPIO_23 23 // Tx to Printer (Connects to pin marked as Rx on printer).
 #define GIMI_PB_GPIO_24 24
 #define GIMI_PB_GPIO_25 25 // MAX98357 Audio I2S_DOUT.
 #define GIMI_PB_GPIO_26 26 // SD Card SD_CS.
@@ -43,7 +43,7 @@
 #define GIMI_PB_GPIO_32 32 // MAX98357 Audio I2S_BCLK.
 #define GIMI_PB_GPIO_33 33 // MAX98357 Audio I2S_LRC.
 #define GIMI_PB_GPIO_34 34
-#define GIMI_PB_GPIO_35 35 // Push Button, EARS. Used to initiate printing, to initiate WPS, dependent upon the current device mode. Requires external 10K pull-up resistor on ESP32-2432S028 hardware.
+#define GIMI_PB_GPIO_35 35 // Push Button, EARS. Used to initiate printing, to initiate WPS, dependent upon the current device mode. Requires external 10K pull-up resistor.
 #define GIMI_PB_GPIO_36 36
 #define GIMI_PB_GPIO_37 37
 #define GIMI_PB_GPIO_38 38

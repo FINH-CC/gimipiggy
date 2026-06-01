@@ -14,7 +14,6 @@
 String etag_array[GIMI_PB_RECEIPTS_TOTAL];
 String url_array[GIMI_PB_RECEIPTS_TOTAL];
 
-//uint32_t current_url = 0;
 String current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
 bool new_file_available = false; // True when a receipt, loaded into the print buffer, differs by ETag to the previous download.
@@ -25,84 +24,84 @@ size_t   fileSize     = 0;
 
 void gimi_pb_bin_file_setup(void) {
 
-    // Set up URL array;
+  // Set up URL array;
 
-    url_array[0] = GIMI_PB_RECEIPT_WELCOME_URL;
-    url_array[1] = GIMI_PB_RECEIPT_DEFAULT_URL;
-    url_array[2] = GIMI_PB_RECEIPT_SAVINGS_URL;
-    url_array[3] = GIMI_PB_RECEIPT_CELEBRATION_URL;
-    url_array[4] = GIMI_PB_RECEIPT_REMINDER_URL;
-    url_array[5] = GIMI_PB_RECEIPT_NOTIFICATION_URL;
+  url_array[0] = GIMI_PB_RECEIPT_WELCOME_URL;
+  url_array[1] = GIMI_PB_RECEIPT_DEFAULT_URL;
+  url_array[2] = GIMI_PB_RECEIPT_SAVINGS_URL;
+  url_array[3] = GIMI_PB_RECEIPT_CELEBRATION_URL;
+  url_array[4] = GIMI_PB_RECEIPT_REMINDER_URL;
+  url_array[5] = GIMI_PB_RECEIPT_NOTIFICATION_URL;
 
-    // Clear the ETag array;
-    etag_array[0] = GIMI_PB_RECEIPT_NULL_ETAG;
-    etag_array[1] = GIMI_PB_RECEIPT_NULL_ETAG;
-    etag_array[2] = GIMI_PB_RECEIPT_NULL_ETAG;
-    etag_array[3] = GIMI_PB_RECEIPT_NULL_ETAG;
-    etag_array[4] = GIMI_PB_RECEIPT_NULL_ETAG;
-    etag_array[5] = GIMI_PB_RECEIPT_NULL_ETAG;
+  // Clear the ETag array;
+  etag_array[0] = GIMI_PB_RECEIPT_NULL_ETAG;
+  etag_array[1] = GIMI_PB_RECEIPT_NULL_ETAG;
+  etag_array[2] = GIMI_PB_RECEIPT_NULL_ETAG;
+  etag_array[3] = GIMI_PB_RECEIPT_NULL_ETAG;
+  etag_array[4] = GIMI_PB_RECEIPT_NULL_ETAG;
+  etag_array[5] = GIMI_PB_RECEIPT_NULL_ETAG;
 
-    current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
+  current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
-    new_file_available = false;
-    new_file_type = GIMI_PB_RECEIPT_TYPE_WELCOME;
+  new_file_available = false;
+  new_file_type = GIMI_PB_RECEIPT_TYPE_DEFAULT;
 
-    fileBuffer   = nullptr;
-    Serial.printf("gimi_pb_bin_file_setup() ONE-TIME MALLOC OF %d bytes.\n", MAX_RECEIPT_BUFFER_SIZE);
-    fileBuffer = (uint8_t*) heap_caps_malloc(MAX_RECEIPT_BUFFER_SIZE, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(contentLength);
-    fileSize     = 0;
+  fileBuffer   = nullptr;
+  Serial.printf("gimi_pb_bin_file_setup() ONE-TIME MALLOC OF %d bytes.\n", MAX_RECEIPT_BUFFER_SIZE);
+  fileBuffer = (uint8_t*) heap_caps_malloc(MAX_RECEIPT_BUFFER_SIZE, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(contentLength);
+  fileSize     = 0;
 }
 
 void gimi_pb_bin_file_timer_initiated_update() {
 
-    Serial.printf("Binary file update, about to search for new ETag.\n");
+  Serial.printf("Binary file update, about to search for new ETag.\n");
 
-    for (uint32_t i = 0; i < GIMI_PB_RECEIPTS_TOTAL; i++) {
+  for (uint32_t i = 0; i < GIMI_PB_RECEIPTS_TOTAL; i++) {
 
-        new_file_available = gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(i);
+    new_file_available = gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(i);
 
-        if (new_file_available) {
+    if (new_file_available) {
 
-            Serial.printf("New receipt available to print of type %d\n", i);  
-            new_file_type = i;          
-            return;
-        }
+      Serial.printf("New receipt available to print of type %d\n", i);  
+      new_file_type = i;          
+      return;
     }
+  }
 }
 
 void gimi_pb_bin_file_button_initiated_print(void) {
 
-    Serial.printf("Binary file print.\n");
+  Serial.printf("Binary file print.\n");
 
-    if (new_file_available == true) {
-        Serial.printf("Binary file print - about to fetch and print new receipt.\n");
-        gimi_pb_bin_fetch_and_print_receipt_by_ordinal(new_file_type);
-    } else {
-        Serial.printf("Binary file print - about to fetch and print welcome receipt.\n");
-        gimi_pb_bin_fetch_and_print_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_DEFAULT);
-    }
- }
+  if (new_file_available == true) {
+    Serial.printf("Binary file print - about to fetch and print new receipt.\n");
+    gimi_pb_bin_fetch_and_print_receipt_by_ordinal(new_file_type);
+  } else {
+    Serial.printf("Binary file print - about to fetch and print welcome receipt.\n");
+    gimi_pb_bin_fetch_and_print_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_DEFAULT);
+  }
+}
 
 bool gimi_pb_get_bin_new_file_available(void) {
-    return new_file_available;
+  return new_file_available;
 }
 
 uint32_t gimi_pb_get_file_type(void) {
-    return new_file_type;
+  return new_file_type;
 }
 
 size_t gimi_pb_get_bin_file_size(void) {
-    return fileSize;
+  return fileSize;
 }
 
 uint8_t* gimi_pb_get_bin_file_buffer(void) {
-    return fileBuffer;
+  return fileBuffer;
 }
 
 void gimi_pb_set_bin_file_printed(void) {
 
-    new_file_available = false;
-    Serial.printf("Receipt printed\n");            
+  new_file_available = false;
+  Serial.printf("Receipt printed\n");            
 }
 
 // Downloads Receipt by ordinal, and compares the new ETag with the ETag of the previous downloaded version (if one exists).

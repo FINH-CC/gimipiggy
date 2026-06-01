@@ -15,22 +15,6 @@
 
 volatile bool ear_button_pressed = false;
 
-// The ESP32 is either running, or in light-sleep.
-//
-// There are 2 event sources, the timer, or the 'ears' button (actually 2 buttons, wired in parallel).
-//
-// Timer events only occur during light-sleep.
-// On wake-up, a check is made whether anything is already in the print-buffer and ready to print.
-// If yes, then the appropriate LED's and sound sequence is played (depnding on the receipt type).
-// If nothing is ready to print (i.e. whatever is in the buffer has already been printed),
-// then a check is made on the server.
-// If nothing new is found on the server, then this device returns silently to sleep.
-// If a new item has been downloaded to the print buffer, then the appropriate LED's and sound sequence is played.
-//
-// Button events may occur either when the device is in light-sleep, or whilst running.
-// In either case, a check should be made if there is anything not-yet-printed in the print buffer,
-// the item printed, the print-buffer item marked as already-printed, and the device return to light-sleep.
-
 void gimi_pb_state_machine_setup(void) {
 
   ear_button_pressed = false;
@@ -104,13 +88,11 @@ void gimi_pb_state_machine_handle_button(void) {
 
     Serial.printf("State Machine - button event - WiFi reconnected, about to download and print.\n");
 
-    //gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
+    gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
     gimi_pb_bin_file_button_initiated_print();
     Serial.printf("State Machine - button event - printing completed.\n");
 
-    gimi_pb_leds_off();
-    //gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
-    //gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);  
+    gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
   }
   
   gimi_pb_wifi_manager_disconnect();

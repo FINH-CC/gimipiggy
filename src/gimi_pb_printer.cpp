@@ -119,7 +119,8 @@ void printBitmap(uint8_t* imageData, int width, int height) {
  int totalBytes = bytesPerLine * height;
  for (int i = 0; i < totalBytes; i++) {
    printerSerial.write(imageData[i]);
- }
+   delayMicroseconds(QR_204_THERMAL_PRINTER_DELAY_US_BYTE_TRANSMIT); // Time for 1 byte to be sent to printer at 9600 Baud 8N1.
+}
  Serial.println("Bitmap printed: " + String(width) + "x" + String(height));
  feedLines(2);
 }
