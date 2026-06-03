@@ -69,17 +69,21 @@ void gimi_pb_bin_file_timer_initiated_update() {
   }
 }
 
-void gimi_pb_bin_file_button_initiated_print(void) {
+bool gimi_pb_bin_file_button_initiated_print(void) {
+
+  bool fetch_and_print_successful = false;
 
   Serial.printf("Binary file print.\n");
 
   if (new_file_available == true) {
     Serial.printf("Binary file print - about to fetch and print new receipt.\n");
-    gimi_pb_bin_fetch_and_print_receipt_by_ordinal(new_file_type);
+    fetch_and_print_successful = gimi_pb_bin_fetch_and_print_receipt_by_ordinal(new_file_type);
   } else {
     Serial.printf("Binary file print - about to fetch and print welcome receipt.\n");
-    gimi_pb_bin_fetch_and_print_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_DEFAULT);
+    fetch_and_print_successful = gimi_pb_bin_fetch_and_print_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_DEFAULT);
   }
+
+  return fetch_and_print_successful;
 }
 
 bool gimi_pb_get_bin_new_file_available(void) {

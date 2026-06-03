@@ -34,7 +34,7 @@ void setup() {
   gimi_pb_audio_setup();
 
   // Play the welcome LED and sound.
-  gimi_pb_state_machine_play_light_and_sound_sequence(DEFAULT_COLOUR_VALUE, SOUND_BOOTUP);
+  gimi_pb_state_machine_play_light_and_sound_sequence(DEFAULT_COLOUR_CODE, SOUND_BOOTUP);
 
   // Light-sleep wake-up set-up.
   pinMode(GIMI_PB_GPIO_35, INPUT_PULLUP); // This is the main EARS button. Must use an external 10K pull-up resistor on ESP32-2432S028.

@@ -12,7 +12,7 @@ void gimi_pb_bin_file_setup(void);
 void gimi_pb_bin_file_timer_initiated_update(void);
 
 // Button triggered printing.
-void gimi_pb_bin_file_button_initiated_print(void);
+bool gimi_pb_bin_file_button_initiated_print(void);
 
 // Button triggered printing support.
 bool gimi_pb_get_bin_new_file_available(void);

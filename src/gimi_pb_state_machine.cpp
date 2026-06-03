@@ -82,20 +82,30 @@ void gimi_pb_state_machine_handle_button(void) {
   // Otherwise fetch and print the recipt
   // If a new receipt is available print that, or if no new receipt is available, then print the Default receipt.
 
+  bool fetch_and_print_successful = false;
+
   gimi_pb_wifi_manager_reconnect();
 
   if (gimi_pb_wifi_manager_is_connected() == true) {
 
     Serial.printf("State Machine - button event - WiFi reconnected, about to download and print.\n");
 
-    gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
-    gimi_pb_bin_file_button_initiated_print();
+//NOTE Excess radio-frequency noise from PWM  can disrupt Wifi.
+//    gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
+
+    fetch_and_print_successful = gimi_pb_bin_file_button_initiated_print();
     Serial.printf("State Machine - button event - printing completed.\n");
 
-    gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
+//    gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
   }
   
   gimi_pb_wifi_manager_disconnect();
+
+//  if (fetch_and_print_successful == true) {
+//    gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
+//  } else {
+//    gimi_pb_state_machine_play_light_and_sound_sequence(ERROR_COLOUR_VALUE, SOUND_ERROR);
+//  }
 
   gimi_pb_state_machine_clear_button_pressed();
 }
@@ -107,37 +117,37 @@ void gimi_pb_state_machine_play_sequence_by_receipt_type(uint32_t receipt_type, 
 
   if (receipt_type == GIMI_PB_RECEIPT_TYPE_WELCOME) {
 
-    light_colour = DEFAULT_COLOUR;
+    light_colour = DEFAULT_COLOUR_CODE;
     sound_clip = SOUND_CELEBRATION;
 
   } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_DEFAULT) {
 
-    light_colour = DEFAULT_COLOUR;
+    light_colour = DEFAULT_COLOUR_CODE;
     sound_clip = SOUND_COIN_CLINK;
 
   } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_SAVINGS) {
 
-    light_colour = CELEBRATION_EXCITED_COLOUR;
+    light_colour = CELEBRATION_EXCITED_COLOUR_CODE;
     sound_clip = SOUND_EXCITED_OINK;
 
   } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_CELEBRATION) {
 
-    light_colour = CELEBRATION_EXCITED_COLOUR;
+    light_colour = CELEBRATION_EXCITED_COLOUR_CODE;
     sound_clip = SOUND_MONEY_ADDED;
 
   } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_REMINDER) {
 
-    light_colour = CELEBRATION_EXCITED_COLOUR;
+    light_colour = CELEBRATION_EXCITED_COLOUR_CODE;
     sound_clip = SOUND_NOTIFICATION_OINK;
 
   } else if (receipt_type == GIMI_PB_RECEIPT_TYPE_NOTIFICATION) {
 
-    light_colour = CELEBRATION_EXCITED_COLOUR;
+    light_colour = CELEBRATION_EXCITED_COLOUR_CODE;
     sound_clip = SOUND_SUCCESS;
 
   } else {
     // Unknown receipt type!
-    light_colour = DEFAULT_COLOUR;
+    light_colour = DEFAULT_COLOUR_CODE;
     sound_clip = SOUND_ERROR;
   }
 
@@ -151,6 +161,7 @@ void gimi_pb_state_machine_play_sequence_by_receipt_type(uint32_t receipt_type, 
 
 void gimi_pb_state_machine_play_light_and_sound_sequence(uint32_t light, uint32_t sound) {
 
+  gimi_pb_leds_on();
   gimi_pb_leds_ramp_up(light);
   gimi_pb_leds_constant(light);
   gimi_pb_audio_play(sound);
@@ -160,6 +171,7 @@ void gimi_pb_state_machine_play_light_and_sound_sequence(uint32_t light, uint32_
 
 void gimi_pb_state_machine_play_light_only_sequence(uint32_t light) {
 
+  gimi_pb_leds_on();
   gimi_pb_leds_ramp_up(light);
   gimi_pb_leds_constant(light);
   gimi_pb_leds_hold();
@@ -169,6 +181,7 @@ void gimi_pb_state_machine_play_light_only_sequence(uint32_t light) {
 
 void gimi_pb_state_machine_printer_pre_sequence(uint32_t light) {
 
+  gimi_pb_leds_on();
   gimi_pb_leds_ramp_up(light);
   gimi_pb_leds_constant(light);
 }

@@ -22,6 +22,28 @@ VIEWING DEBUG TRACING
 
 Debug tracing should work on either Platformio or Arduino IDE.
 
+OPERATION
+
+1. On first-time power-up the device starts as a Wifi Server.
+
+Connect to SSID ESP*** with your phone, open the browser, and enter the desired network ID (or use the button to select from a list of local SSID's) - and enter the password.
+
+2. Once a successfull WiFi connection has been made, the device will reboot, and print the 'Welcome' receipt.
+
+3. After completing printing the welcome receipt, the device will go into light-sleep for 60 seconds, then wake and connect to the server to check for new receipts.
+
+If a new receipt is found, the device flashes the LED, and plays a sound.
+If no new receipt is found, the device returns silently to sleep.
+
+Every following minute, if no new receipt has yet been found, the device repeats this process.
+If a new receipt has already been found, the device flashes the LED, but does not play a sound.
+
+4. If the user presses the 'Ears' button, and a new rceipt has already been found on an earlier timer-wakeup - then that receipt is (freshly) downloaded and prinyed.
+If no new receipt was pending, the deafult receipt is printed.
+
+5. To clear the WiFi settings, hold down the BOOT button and press and release the user 'Ears' button.
+
+
 HOW IT WORKS
 
 The ESP32 is either running, or in light-sleep.
