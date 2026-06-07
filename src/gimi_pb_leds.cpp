@@ -160,6 +160,7 @@ void gimi_pb_leds_ramp_up(uint32_t colour_code){
     set_blue_duty((~blue_ramp) & BIT_MASK_8);
 
     delay(RAMP_DELAY);
+    yield();
   }
 
   set_red_duty(red);
@@ -189,6 +190,7 @@ void gimi_pb_leds_hold(void) {
 
   Serial.printf("Colour hold time %d milliseconds\n", HOLD_DELAY);
   delay(HOLD_DELAY);
+  yield();
 }
 
 void gimi_pb_leds_ramp_down(uint32_t colour_code) {
@@ -219,6 +221,7 @@ void gimi_pb_leds_ramp_down(uint32_t colour_code) {
     set_blue_duty((~blue_ramp) & BIT_MASK_8);
 
     delay(RAMP_DELAY);
+    yield();
   }
 
   set_red_duty(PWM_MAX);

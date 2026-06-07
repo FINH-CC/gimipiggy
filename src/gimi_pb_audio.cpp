@@ -60,6 +60,7 @@ void gimi_pb_audio_play(uint32_t sound_id)
 
   while (audio.isRunning()) {
     audio.loop();
+    yield();
   }
 
 }

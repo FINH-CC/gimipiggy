@@ -12,6 +12,11 @@
 #include "gimi_pb_html_fetch.h"
 #include "gimi_pb_wifi.h"
 
+#define WIFI_CONNECTION_ATTEMPTS 30
+#define WIFI_CONNECTION_INCREASE_DELAY_AFTER_ATTEMPTS 15
+#define WIFI_CONNECTION_ATTEMPT_DELAY_SHORT 1000
+#define WIFI_CONNECTION_ATTEMPT_DELAY_LONG 5000
+
 // DNS server for captive portal
 DNSServer dnsServer;
 WebServer server(80);
@@ -110,7 +115,7 @@ void startConfigMode() {
 
 }
 
-void gimi_pb_wifi_manager_setup() {
+bool gimi_pb_wifi_manager_setup() {
 
   wifi_is_connected = false;
 
@@ -129,8 +134,13 @@ void gimi_pb_wifi_manager_setup() {
     WiFi.begin(ssid.c_str(), password.c_str());
 
     int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-    delay(500);
+    while (WiFi.status() != WL_CONNECTED && attempts < WIFI_CONNECTION_ATTEMPTS) {
+    
+    if (attempts <= WIFI_CONNECTION_INCREASE_DELAY_AFTER_ATTEMPTS)
+     delay(WIFI_CONNECTION_ATTEMPT_DELAY_SHORT);
+    else
+     delay(WIFI_CONNECTION_ATTEMPT_DELAY_LONG);
+
     Serial.print(".");
     attempts++;
     }
@@ -140,14 +150,16 @@ void gimi_pb_wifi_manager_setup() {
     Serial.println("Connected to WiFi!");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
-    return;
+    return true;
     } else {
       Serial.println("Failed to connect to saved WiFi");
+      return false;
     }
   }
 
   // Start configuration mode
   startConfigMode();
+  return true;
 }
 
 bool gimi_pb_wifi_manager_is_config_mode() {

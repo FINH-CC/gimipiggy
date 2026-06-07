@@ -188,6 +188,7 @@ void printBitmapGS_Method(const unsigned char* progmemData, int width, int heigh
      for (int col = 0; col < bytesPerLine; col++) {
        printerSerial.write(dataToPrint[baseIndex + col]);
        delayMicroseconds(QR_204_THERMAL_PRINTER_DELAY_US_BYTE_TRANSMIT); // Time for 1 byte to be sent to printer at 9600 Baud 8N1.
+       yield();
      }
    }
  }

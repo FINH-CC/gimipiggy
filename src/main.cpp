@@ -14,6 +14,8 @@
 #include "gimi_pb_state_machine.h"
 #include "gimi_pb_wifi.h"
 
+#define WIFI_DELAY 64 // Milliseconds.
+
 void ARDUINO_ISR_ATTR ear_button_ISR() {
 
   gimi_pb_state_machine_set_button_pressed();
@@ -30,11 +32,16 @@ void setup() {
   gimi_pb_buttons_setup();
   gimi_pb_state_machine_setup();
   gimi_pb_bin_file_setup();
-  gimi_pb_wifi_manager_setup();
+  delay(WIFI_DELAY);
+  bool wifi_setup = gimi_pb_wifi_manager_setup();
+  delay(WIFI_DELAY);
   gimi_pb_audio_setup();
 
   // Play the welcome LED and sound.
-  gimi_pb_state_machine_play_light_and_sound_sequence(DEFAULT_COLOUR_CODE, SOUND_BOOTUP);
+  if (wifi_setup == true)
+    gimi_pb_state_machine_play_light_and_sound_sequence(DEFAULT_COLOUR_CODE, SOUND_BOOTUP);
+  else
+    gimi_pb_state_machine_play_light_and_sound_sequence(ERROR_COLOUR_CODE, SOUND_ERROR);
 
   // Light-sleep wake-up set-up.
   pinMode(GIMI_PB_GPIO_35, INPUT_PULLUP); // This is the main EARS button. Must use an external 10K pull-up resistor on ESP32-2432S028.

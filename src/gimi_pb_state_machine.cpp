@@ -101,11 +101,11 @@ void gimi_pb_state_machine_handle_button(void) {
   
   gimi_pb_wifi_manager_disconnect();
 
-//  if (fetch_and_print_successful == true) {
-//    gimi_pb_state_machine_play_light_and_sound_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
-//  } else {
-//    gimi_pb_state_machine_play_light_and_sound_sequence(ERROR_COLOUR_VALUE, SOUND_ERROR);
-//  }
+  if (fetch_and_print_successful == true) {
+    gimi_pb_state_machine_play_sound_only_sequence(SOUND_SUCCESS);
+  } else {
+    gimi_pb_state_machine_play_sound_only_sequence(SOUND_ERROR);
+  }
 
   gimi_pb_state_machine_clear_button_pressed();
 }
@@ -177,6 +177,11 @@ void gimi_pb_state_machine_play_light_only_sequence(uint32_t light) {
   gimi_pb_leds_hold();
   gimi_pb_leds_ramp_down(light);
   gimi_pb_leds_off();
+}
+
+void gimi_pb_state_machine_play_sound_only_sequence(uint32_t sound) {
+
+  gimi_pb_audio_play(sound);
 }
 
 void gimi_pb_state_machine_printer_pre_sequence(uint32_t light) {

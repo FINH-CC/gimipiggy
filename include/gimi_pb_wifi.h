@@ -5,7 +5,7 @@
 #ifndef __GIMI_PB_WIFI_H
 #define __GIMI_PB_WIFI_H
 
-void gimi_pb_wifi_manager_setup(void);
+bool gimi_pb_wifi_manager_setup(void);
 bool gimi_pb_wifi_manager_is_config_mode(void);
 
 void gimi_pb_wifi_manager_reconnect(void);
