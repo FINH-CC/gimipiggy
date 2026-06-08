@@ -28,7 +28,7 @@ void gimi_pb_state_machine_handle_timer(void) {
   gimi_pb_state_machine_clear_button_pressed();
 
   // If there's already a receipt ready to print, then don't bother to search for more until the current receipt has been printed.
-  if (gimi_pb_get_bin_new_file_available() == false) {
+  if (gimi_pb_get_bin_new_file_available() == false || gimi_pb_get_bin_file_downloaded() == false ) {
 
     Serial.printf("State Machine - timer - about to look for new file on server.\n");
 
@@ -42,8 +42,8 @@ void gimi_pb_state_machine_handle_timer(void) {
 
     gimi_pb_wifi_manager_disconnect();
 
-    // If there is a new receipt ready print, after the update, anounce it.
-    if (gimi_pb_get_bin_new_file_available() == true) {
+    // If there is a new receipt ready to print, after the update, announce it.
+    if (gimi_pb_get_bin_new_file_available() == true && gimi_pb_get_bin_file_downloaded() == true) {
 
       Serial.printf("State Machine - WiFi disconnected, and new receipt type available.\n");
       gimi_pb_state_machine_play_sequence_by_receipt_type(gimi_pb_get_file_type(), true);
@@ -79,31 +79,20 @@ void gimi_pb_state_machine_handle_button(void) {
     gimi_pb_wifi_manager_restart_wifi_setup();
   }
 
-  // Otherwise fetch and print the recipt
-  // If a new receipt is available print that, or if no new receipt is available, then print the Default receipt.
-
-  bool fetch_and_print_successful = false;
-
-  gimi_pb_wifi_manager_reconnect();
-
-  if (gimi_pb_wifi_manager_is_connected() == true) {
-
-    Serial.printf("State Machine - button event - WiFi reconnected, about to download and print.\n");
-
-//NOTE Excess radio-frequency noise from PWM  can disrupt Wifi.
-//    gimi_pb_state_machine_printer_pre_sequence(SUCCESS_COLOUR_VALUE);
-
-    fetch_and_print_successful = gimi_pb_bin_file_button_initiated_print();
-    Serial.printf("State Machine - button event - printing completed.\n");
-
-//    gimi_pb_state_machine_printer_post_sequence(SUCCESS_COLOUR_VALUE, SOUND_SUCCESS);
-  }
+  // Otherwise print the receipt.
   
-  gimi_pb_wifi_manager_disconnect();
+  bool print_successful = false;
 
-  if (fetch_and_print_successful == true) {
+  print_successful = gimi_pb_bin_print_downloaded_receipt();
+
+  if (print_successful == true) {
+
+    Serial.printf("State Machine - button event - printing from existing download completed.\n");
     gimi_pb_state_machine_play_sound_only_sequence(SOUND_SUCCESS);
+
   } else {
+
+    Serial.printf("State Machine - button event - printing failed.\n");
     gimi_pb_state_machine_play_sound_only_sequence(SOUND_ERROR);
   }
 

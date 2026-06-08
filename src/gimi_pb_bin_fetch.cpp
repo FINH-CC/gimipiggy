@@ -11,12 +11,16 @@
 #include "gimi_pb_qr204.h"
 #include "gimi_pb_server.h"
 
+#define HTTP_GET_ATTEMPTS 6
+#define HTTP_GET_ATTEMPT_DELAY 500
+
 String etag_array[GIMI_PB_RECEIPTS_TOTAL];
 String url_array[GIMI_PB_RECEIPTS_TOTAL];
 
 String current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
-bool new_file_available = false; // True when a receipt, loaded into the print buffer, differs by ETag to the previous download.
+bool new_file_available = false; // True when a receipt differs by ETag to the previous download.
+bool file_downloaded = false; // True when a receipt is loaded into memory and ready to print.
 uint32_t new_file_type = GIMI_PB_RECEIPT_TYPE_WELCOME;
 
 uint8_t* fileBuffer   = nullptr;
@@ -44,6 +48,7 @@ void gimi_pb_bin_file_setup(void) {
   current_etag = GIMI_PB_RECEIPT_NULL_ETAG;
 
   new_file_available = false;
+  file_downloaded = false;
   new_file_type = GIMI_PB_RECEIPT_TYPE_DEFAULT;
 
   fileBuffer   = nullptr;
@@ -64,30 +69,30 @@ void gimi_pb_bin_file_timer_initiated_update() {
 
       Serial.printf("New receipt available to print of type %d\n", i);  
       new_file_type = i;          
-      return;
+      break;
     }
   }
-}
-
-bool gimi_pb_bin_file_button_initiated_print(void) {
-
-  bool fetch_and_print_successful = false;
-
-  Serial.printf("Binary file print.\n");
 
   if (new_file_available == true) {
-    Serial.printf("Binary file print - about to fetch and print new receipt.\n");
-    fetch_and_print_successful = gimi_pb_bin_fetch_and_print_receipt_by_ordinal(new_file_type);
+    Serial.printf("Binary file fetch - about to fetch new receipt.\n");
+    file_downloaded = gimi_pb_bin_fetch_receipt_by_ordinal(new_file_type);
   } else {
-    Serial.printf("Binary file print - about to fetch and print welcome receipt.\n");
-    fetch_and_print_successful = gimi_pb_bin_fetch_and_print_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_DEFAULT);
+    Serial.printf("Binary file fetch - about to fetch default receipt.\n");
+    file_downloaded = gimi_pb_bin_fetch_receipt_by_ordinal(GIMI_PB_RECEIPT_TYPE_DEFAULT);
   }
 
-  return fetch_and_print_successful;
+  if (file_downloaded == true)
+    Serial.printf("Binary file fetch - successfully loaded into memory.\n");
+  else
+    Serial.printf("Binary file fetch - unsuccessful - not loaded into memory.\n");
 }
 
 bool gimi_pb_get_bin_new_file_available(void) {
   return new_file_available;
+}
+
+bool gimi_pb_get_bin_file_downloaded(void) {
+  return file_downloaded;
 }
 
 uint32_t gimi_pb_get_file_type(void) {
@@ -131,11 +136,26 @@ bool gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(uint32_t url_number) {
     //http.addHeader("If-None-Match", "fbb7c88732d1190ed812ea84ffcd845b61b2f38ecec01bc158be16801df33c6d");
     //http.addHeader("User-Agent", "ESP32-HTTPClient/1.0");
 
-    int httpCode = http.GET();
-    if (httpCode != HTTP_CODE_OK) {
+    int httpCode;
+    for (uint32_t i = 0; i < HTTP_GET_ATTEMPTS; i++) {
+
+      httpCode = http.GET();
+
+      if (httpCode == HTTP_CODE_OK) {
+
+        Serial.printf("[HTTP] GET success, code: %d\n", httpCode);
+        break;
+
+      } else {
+
         Serial.printf("[HTTP] GET failed, code: %d\n", httpCode);
         http.end();
-        return false;
+
+        if (i >= HTTP_GET_ATTEMPTS - 1)
+          return false;
+      }
+
+      delay(HTTP_GET_ATTEMPT_DELAY);
     }
 
     // Request successful, print the collected headers
@@ -149,6 +169,8 @@ bool gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(uint32_t url_number) {
             Serial.printf("Current ETag  %s: \n", current_etag.c_str());
         }
     }
+
+    http.end();
 
     // Check if the ETag for the newly downloaded file has changed since the previous download.
     Serial.printf("Previous ETag  %s: \n", etag_array[url_number].c_str());
@@ -166,138 +188,34 @@ bool gimi_pb_bin_fetch_and_check_etag_by_receipt_ordinal(uint32_t url_number) {
         return false;
     }
 
-    int contentLength = http.getSize();   // -1 if chunked / unknown
 }
 
-// Downloads Receipt by ordinal, and print it.
-// Returns true if printable content downloaded and sent to printer.
-// (no mechanism available to check whether content has actually been successfully printed)
+bool gimi_pb_bin_print_downloaded_receipt(void) {
 
-bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal_uses_malloc(uint32_t url_number) {
+    // Check if there is file already downloaded and available in memory to print
+  if (file_downloaded == true) {
 
-    Serial.printf("Binary file print - about to fetch and print receipt by ordinal.\n");
-
-    fileSize   = 0;
-
-    HTTPClient http;
-    http.begin(url_array[url_number].c_str());
-
-    // Optional: set timeouts (ms)
-    http.setTimeout(10000);
-    http.setConnectTimeout(5000);
-
-    int httpCode = http.GET();
-    if (httpCode != HTTP_CODE_OK) {
-        Serial.printf("[HTTP] GET failed, code: %d\n", httpCode);
-        http.end();
-        return false;
-    }
-
-    int contentLength = http.getSize();   // -1 if chunked / unknown
-    WiFiClient* stream = http.getStreamPtr();
-
-    // ── Path A: known size ──────────────────────────────────────────────
-    if (contentLength > 0) {
-        Serial.printf("Binary file print - fetching known size of %d bytes.\n", contentLength);
-        fileBuffer = (uint8_t*) heap_caps_malloc(contentLength, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(contentLength);
-        if (!fileBuffer) {
-            Serial.println("malloc failed — not enough heap");
-            http.end();
-            return false;
-        }
-
-        size_t bytesRead = 0;
-        uint32_t timeout = millis();
-
-        while (http.connected() && bytesRead < (size_t)contentLength) {
-            size_t available = stream->available();
-            if (available) {
-                size_t chunk = stream->readBytes(
-                    fileBuffer + bytesRead,
-                    min(available, (size_t)(contentLength - bytesRead))
-                );
-                bytesRead += chunk;
-                timeout = millis();  // reset watchdog on progress
-            }
-            if (millis() - timeout > 5000) {
-                Serial.println("Stream timeout");
-                free(fileBuffer);
-                fileBuffer = nullptr;
-                http.end();
-                return false;
-            }
-            yield();  // feed the ESP32 watchdog
-        }
-
-        fileSize = bytesRead;
-        Serial.printf("Downloaded %u bytes\n", fileSize);
-
-    // ── Path B: unknown / chunked size ─────────────────────────────────
-    } else {
-        Serial.printf("Binary file print - fetching unknown size.\n");
-        // Grow a dynamic buffer in chunks
-        const size_t CHUNK = 512;
-        size_t allocated = CHUNK;
-        fileBuffer = (uint8_t*) heap_caps_malloc(allocated, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than malloc(allocated);
-        if (!fileBuffer) { http.end(); return false; }
-
-        fileSize = 0;
-        uint8_t tmp[CHUNK];
-
-        uint32_t timeout = millis();
-        while (http.connected()) {
-            size_t available = stream->available();
-            if (available) {
-                size_t n = stream->readBytes(tmp, min(available, CHUNK));
-                // Grow buffer if needed
-                if (fileSize + n > allocated) {
-                    allocated += max(n, CHUNK);
-                    uint8_t* resized = (uint8_t*) heap_caps_realloc(fileBuffer, allocated, MALLOC_CAP_SPIRAM); // Explicity use PSRAM, rather than realloc(fileBuffer, allocated);
-                    if (!resized) {
-                        free(fileBuffer); fileBuffer = nullptr;
-                        http.end(); return false;
-                    }
-                    fileBuffer = resized;
-                }
-                memcpy(fileBuffer + fileSize, tmp, n);
-                fileSize += n;
-                timeout = millis();
-            } else if (millis() - timeout > 3000) {
-                break;  // assume EOF
-            }
-            yield();
-        }
-        Serial.printf("Streamed %u bytes (chunked)\n", fileSize);
-    }
-
-    http.end();
-
-    // fileBuffer now holds the raw bytes — do whatever you need:
-    Serial.printf("First 4 bytes: %02X %02X %02X %02X\n",
-        fileBuffer[0], fileBuffer[1], fileBuffer[2], fileBuffer[3]);
-
-    Serial.printf("About to print receipt from URL # %d.\n", url_number);
+    Serial.printf("Binary file print - printing Receipt that has already been downloaded.\n");
 
     gimi_pb_printer_begin();
     gimi_pb_printer_print_binary();
     gimi_pb_printer_end();
 
-    Serial.printf("Printing complete for receipt URL # %d.\n", url_number);
-
-    free(fileBuffer);
-    fileBuffer = nullptr;
-    fileSize   = 0;
+    file_downloaded = false;
 
     return true;
+
+  }
+
+  return false;
 }
 
-// Downloads Receipt by ordinal, and print it.
-// Returns true if printable content downloaded and sent to printer.
-// (no mechanism available to check whether content has actually been successfully printed)
+// Downloads Receipt by ordinal.
+// Returns true if printable content downloaded.
 
-bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
+bool gimi_pb_bin_fetch_receipt_by_ordinal(uint32_t url_number) {
 
-    Serial.printf("Binary file print - about to fetch and print receipt by ordinal.\n");
+    Serial.printf("Binary file print - about to fetch receipt by ordinal.\n");
 
     memset(fileBuffer, 0, MAX_RECEIPT_BUFFER_SIZE);
     fileSize   = 0;
@@ -309,11 +227,26 @@ bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
     http.setTimeout(10000);
     http.setConnectTimeout(5000);
 
-    int httpCode = http.GET();
-    if (httpCode != HTTP_CODE_OK) {
+    int httpCode;
+    for (uint32_t i = 0; i < HTTP_GET_ATTEMPTS; i++) {
+
+      httpCode = http.GET();
+
+      if (httpCode == HTTP_CODE_OK) {
+
+        Serial.printf("[HTTP] GET success, code: %d\n", httpCode);
+        break;
+
+      } else {
+
         Serial.printf("[HTTP] GET failed, code: %d\n", httpCode);
         http.end();
-        return false;
+
+        if (i >= HTTP_GET_ATTEMPTS - 1)
+          return false;
+      }
+
+      delay(HTTP_GET_ATTEMPT_DELAY);
     }
 
     int contentLength = http.getSize();   // -1 if chunked / unknown
@@ -325,7 +258,6 @@ bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
 
     WiFiClient* stream = http.getStreamPtr();
 
-    // ── Path A: known size ──────────────────────────────────────────────
     if (contentLength > 0) {
         Serial.printf("Binary file print - fetching known size of %d bytes.\n", contentLength);
 
@@ -360,14 +292,6 @@ bool gimi_pb_bin_fetch_and_print_receipt_by_ordinal(uint32_t url_number) {
     // fileBuffer now holds the raw bytes — do whatever you need:
     Serial.printf("First 4 bytes: %02X %02X %02X %02X\n",
         fileBuffer[0], fileBuffer[1], fileBuffer[2], fileBuffer[3]);
-
-    Serial.printf("About to print receipt from URL # %d.\n", url_number);
-
-    gimi_pb_printer_begin();
-    gimi_pb_printer_print_binary();
-    gimi_pb_printer_end();
-
-    Serial.printf("Printing complete for receipt URL # %d.\n", url_number);
 
     return true;
 }

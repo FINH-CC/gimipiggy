@@ -5,7 +5,7 @@
 #ifndef __GIMI_PB_SERVER_H
 #define __GIMI_PB_SERVER_H
 
-#define SLEEP_TIME_BETWEEN_FETCH 60000000 // In microseconds. 1,000,000 us= 1 second. 60000000 = 60 seconds.
+#define SLEEP_TIME_BETWEEN_FETCH 25000000 // In microseconds. 1,000,000 us= 1 second. 25000000 = 25 seconds.
 
 // Receipt are downloaded immediately before printing, to ensure an up-to-date-copy.
 // 65536 corrsponds to a Receipt of 170mm length.

@@ -13,9 +13,12 @@
 #include "gimi_pb_wifi.h"
 
 #define WIFI_CONNECTION_ATTEMPTS 30
-#define WIFI_CONNECTION_INCREASE_DELAY_AFTER_ATTEMPTS 15
+#define WIFI_CONNECTION_CHANGE_DELAY_AFTER_ATTEMPTS 5
 #define WIFI_CONNECTION_ATTEMPT_DELAY_SHORT 1000
-#define WIFI_CONNECTION_ATTEMPT_DELAY_LONG 5000
+#define WIFI_CONNECTION_ATTEMPT_DELAY_LONG 4000
+
+#define WIFI_RE_CONNECTION_ATTEMPTS 10
+#define WIFI_RE_CONNECTION_ATTEMPT_DELAY 5000
 
 // DNS server for captive portal
 DNSServer dnsServer;
@@ -127,21 +130,28 @@ bool gimi_pb_wifi_manager_setup() {
   Serial.println("\n\nGimi PB WiFi Configuration Portal");
   Serial.println("================================");
 
-  // Try to connect to saved WiFi
+    // Try to connect to saved WiFi
   if (ssid.length() > 0) {
     Serial.println("Attempting to connect to saved WiFi: " + ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid.c_str(), password.c_str());
 
     int attempts = 0;
+    bool short_delay = true;
+
     while (WiFi.status() != WL_CONNECTED && attempts < WIFI_CONNECTION_ATTEMPTS) {
     
-    if (attempts <= WIFI_CONNECTION_INCREASE_DELAY_AFTER_ATTEMPTS)
-     delay(WIFI_CONNECTION_ATTEMPT_DELAY_SHORT);
-    else
-     delay(WIFI_CONNECTION_ATTEMPT_DELAY_LONG);
+    if (attempts % WIFI_CONNECTION_CHANGE_DELAY_AFTER_ATTEMPTS == 0)
+      short_delay = !short_delay;
 
-    Serial.print(".");
+    if (short_delay == true) {
+     delay(WIFI_CONNECTION_ATTEMPT_DELAY_SHORT);
+     Serial.print(".");
+    } else {
+     delay(WIFI_CONNECTION_ATTEMPT_DELAY_LONG);
+     Serial.print("+");
+    }
+
     attempts++;
     }
     Serial.println();
@@ -181,11 +191,19 @@ void gimi_pb_wifi_manager_reconnect() {
       wifi_is_connected = false;
       // Lost connection, try to reconnect
       Serial.println("WiFi disconnected, attempting to reconnect...");
-      WiFi.reconnect();
-      delay(5000);
 
-      if (WiFi.status() == WL_CONNECTED)
-        wifi_is_connected = true;
+      for (uint32_t attempts = 0; attempts < WIFI_RE_CONNECTION_ATTEMPTS; attempts++) {
+
+        WiFi.reconnect();
+        delay(WIFI_RE_CONNECTION_ATTEMPT_DELAY);
+        Serial.print(".");
+
+        if (WiFi.status() == WL_CONNECTED) {
+          wifi_is_connected = true;
+          break;
+        }
+      }
+
     }
   }
     
