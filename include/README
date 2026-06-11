@@ -1,6 +1,6 @@
 INTRODUCTION
 
-Source code and corresponding prototype electronics hardware developed by THINK RADIO LIMITED, under contract to FINH LIMITED, for their client GIMI AB.
+Source code and corresponding prototype electronics hardware developed by FINH LIMITED, for their client GIMI AB.
 
 This source code, firmware and electronics hardware forms part of a product prototype consisting at its core of a user-configurable wifi connection,
 thermal printer, user interaction buttons, audio output, RGB LED output, SD card reader, and rechargeable lithium-battery based power supply.
