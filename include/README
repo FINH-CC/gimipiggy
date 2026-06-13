@@ -20,7 +20,29 @@ For instructions on setting up Platformio and VSCode see https://randomnerdtutor
 
 VIEWING DEBUG TRACING
 
-Debug tracing should work on either Platformio or Arduino IDE.
+Debug tracing should work on either Platformio or Arduino IDE, or click "Connect" and use the "Console" (in the top bar) at https://espressif.github.io/esp-launchpad/
+
+HOW TO RE-FLASH FROM A BINARY
+
+1. With a cable, connect the ESP32 (microUSB port - not the USB-Ccharging port) to your computer.
+
+2. Point your bowser at https://espressif.github.io/esp-launchpad/
+
+3. Click on "DIY", in the top bar.
+
+4. Click on 'Connect' (in the top bar), and in the pop-up, select the EPS32 port labelled something like "CP2102N USB to UART Bridge Controller (cu.usbserial-2210)" and click on the "Connect" button in the pop-up.
+
+5. The Red "Erase Flash" button should appear - click on it - then click on "DIY" again.
+
+6. Now CHANGE The Flash Address to be 0x0000 (i.e. all-zeroes) - VERY IMPORTANT!
+
+7. Click on "Choose file" and choose your binary file (e.g. merged_firmware_pig_001,bin).
+
+8. Click on "Program".
+
+9. The debug tracing window opens, and shows progress - once it has finsihed, click on "Reset Device" and "Confirm".
+
+10. The Terminal window provides debug-tracing from the Gimi device - copy and save this if you hit any sort of bug on the device. 
 
 OPERATION
 
