@@ -157,10 +157,11 @@ bool gimi_pb_wifi_manager_setup() {
     Serial.println();
 
     if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("Connected to WiFi!");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-    return true;
+      wifi_is_connected = true;
+      Serial.println("Connected to WiFi!");
+      Serial.print("IP Address: ");
+      Serial.println(WiFi.localIP());
+      return true;
     } else {
       Serial.println("Failed to connect to saved WiFi");
       return false;

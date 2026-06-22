@@ -76,8 +76,10 @@ void loop() {
 
       case ESP_SLEEP_WAKEUP_EXT0:   
 
+        attachInterrupt(GIMI_PB_GPIO_35, ear_button_ISR, FALLING); // Generates EARS button interrupt, but only during timer wake-up.
         Serial.println("Wakeup caused by BUTTON");
         gimi_pb_state_machine_handle_button();
+        detachInterrupt(GIMI_PB_GPIO_35); // EARS interrupt disabled, to avoid clash with EXT0 wake-up.
         break;
 
       case ESP_SLEEP_WAKEUP_TIMER:  

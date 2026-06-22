@@ -9,11 +9,26 @@
 #include "gimi_pb_bin_fetch.h"
 #include "gimi_pb_buttons.h"
 #include "gimi_pb_leds.h"
+#include "gimi_pb_pins.h"
 #include "gimi_pb_printer.h"
 #include "gimi_pb_server.h"
 #include "gimi_pb_wifi.h"
 
+#define FAST_CLICK_COUNT_THRESHOLD 5 // Number of fast clicks on the ear-buttons required to reset WiFi.
+#define FAST_CLICK_TIMEOUT 2000 // The time interval, in ms, in which the fast clicks must occur.
+#define FAST_CLICK_DEBOUNCE_DELAY 50 // Interval between re-checking for new clicks.
+
+#define HOLD_CLICK_TIME_THRESHOLD 2000 // The time interval, in ms, for which the last click must be sustained.
+#define HOLD_CLICK_TEST_DURATION 5000 // The maximum time interval, in ms, for which for which to check for a long-click.
+
 volatile bool ear_button_pressed = false;
+
+uint32_t fast_click_count;
+uint32_t fast_click_start_time;
+bool fast_click_threshold_met;
+
+uint32_t hold_click_test_start_time;
+uint32_t hold_click_start_time;
 
 void gimi_pb_state_machine_setup(void) {
 
@@ -77,6 +92,50 @@ void gimi_pb_state_machine_handle_button(void) {
 
     Serial.printf("State Machine - BOOT button press. About to reset WiFi.\n");
     gimi_pb_wifi_manager_restart_wifi_setup();
+  }
+
+  fast_click_threshold_met = false;
+  fast_click_count = 0;
+  fast_click_start_time = millis();
+  gimi_pb_state_machine_clear_button_pressed();
+
+  while (millis() < (fast_click_start_time + FAST_CLICK_TIMEOUT)) {
+
+    if (gimi_pb_state_machine_get_button_pressed() == true) {
+
+      gimi_pb_state_machine_clear_button_pressed();
+      fast_click_count++;
+      Serial.printf("FAST CLICK COUNT %d\n", fast_click_count);
+    
+    }
+
+    if (fast_click_count >= FAST_CLICK_COUNT_THRESHOLD) {
+      Serial.printf("FAST CLICK THRESHOLD MET\n");
+      fast_click_threshold_met = true;
+      break; // Move on immediately to detection of the long-click.
+    }
+
+    delay(FAST_CLICK_DEBOUNCE_DELAY);
+  }
+
+  if (fast_click_threshold_met == true) {
+
+    Serial.printf("WAITING FOR LONG CLICK\n");
+    hold_click_test_start_time = millis();
+
+    while (millis() < (hold_click_test_start_time + HOLD_CLICK_TEST_DURATION)) {
+
+      hold_click_start_time = millis();
+
+      while(digitalRead(GIMI_PB_GPIO_35) == LOW) {
+        if ((millis() - hold_click_start_time)  > HOLD_CLICK_TIME_THRESHOLD) {          
+          Serial.printf("LONG PRESS DURATION THRESHOLD MET. About to reset WiFi.\n");
+          gimi_pb_wifi_manager_restart_wifi_setup(); // Reset WiFi.
+        }
+      }
+
+    }
+
   }
 
   // Otherwise print the receipt.
@@ -190,7 +249,6 @@ void gimi_pb_state_machine_printer_post_sequence(uint32_t light, uint32_t sound)
 void gimi_pb_state_machine_set_button_pressed(void) { 
 
   ear_button_pressed = true;
-  Serial.println("EAR BUTTON INTERRUPT - button press SET");
 }
 
 void gimi_pb_state_machine_clear_button_pressed(void) {
