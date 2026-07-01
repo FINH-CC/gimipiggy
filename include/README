@@ -211,12 +211,20 @@ U_SWITCH Micro-switches (2 of)
                  SYSTEM_GND --- * N-O            *
                                 ******************
 
-PUSH_SWITCH (Power)
+MICROSWITCH uSw (Power)
 
                                 ******************
-                   PSU_UPS+ --- * RED_IN RED_OUT * --- SYSTEM_9V0
-                   PSU_UPS- --- * BLK_IN BLK_OUT * --- SYSTEM_GND
+            ADAFRUIT_1400 1 --- * BLK_IN BLK_OUT * --- ADA_FRUIT_1400 3
                                 ******************
+
+ADAFRUIT 1400 (Push-button Power Switch Breakout Product ID: 1400)
+
+                                ******2****4******
+                   PSU_UPS+ --- * In         Out * --- SYSTEM_9V0
+                   PSU_UPS- --- * G            G * --- SYSTEM_GND
+                                ******1****3******
+                                      |    |
+                                     uSw  uSw
 
 PSU LX-2BUPS (Top View/Component-side)
 
@@ -226,7 +234,7 @@ NOTE: External USB Charging should connect ONLY TO HERE.
          PUSH_SWITCH_RED_IN --- * UPS+      UPS- * --- PUSH_SWITCH_BLACK_IN
                                 ******************
 
-
+NOTE: The AdaFruit 1400 and microswitch are late revisions to fit with enclosure mechanicals - they may not necessarily form part of a production version.
 
 Proposed production hardware (with estimated costs based on 2500 quantity):
 
